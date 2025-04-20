@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# bndy-core: BAV Management Platform
 
-## Getting Started
+bndy-core is the backstage management platform for bands, artists, and venues (BAVs) within the bndy ecosystem. It provides powerful tools for profile management, setlist creation, song pipelines, calendar management, and more.
 
-First, run the development server:
+## Features
 
+- **Profile Management**: Create and manage artist/band/venue profiles
+- **Playbook & Setlists**: Manage songs with notes, chord charts, and lyrics
+- **Drag-and-Drop Setlists**: Create and organize setlists with AI suggestions
+- **Song Pipeline**: Suggest songs, vote, and manage practice lists
+- **Shared Calendar**: Manage private events and public gigs
+- **Band Member Management**: Manage band members and their roles
+- **Vacancy Board**: Create and manage vacancy posts
+- **Event Creation**: Streamlined event creation for the bndy.live platform
+- **Spotify Integration**: Sync playbook/setlists with Spotify playlists
+
+## Setup
+
+1. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Set up environment variables:
+Copy `.env.local.example` to `.env.local` and fill in your Firebase configuration:
+```bash
+cp .env.local.example .env.local
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Link to bndy-ui package (for local development):
+```bash
+npm link bndy-ui
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3002](http://localhost:3002) in your browser.
 
-To learn more about Next.js, take a look at the following resources:
+## Environment Variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `NEXT_PUBLIC_FIREBASE_API_KEY`: Firebase API Key
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`: Firebase Auth Domain
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`: Firebase Project ID
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`: Firebase Storage Bucket
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`: Firebase Messaging Sender ID
+- `NEXT_PUBLIC_FIREBASE_APP_ID`: Firebase App ID
+- `NEXT_PUBLIC_SPOTIFY_CLIENT_ID`: Spotify Client ID
+- `NEXT_PUBLIC_SPOTIFY_REDIRECT_URI`: Spotify Redirect URI
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Authentication
 
-## Deploy on Vercel
+This project uses Firebase Authentication via the central bndy authentication service. Users must sign in through bndy.co.uk and will be redirected back to bndy-core with their authentication token.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is deployed on Vercel and served at my.bndy.co.uk.
+
+## Related Projects
+
+- [bndy-ui](https://github.com/bndy/bndy-ui): Shared UI components and authentication library
+- [bndy-landing](https://github.com/bndy/bndy-landing): Authentication hub and static pages
+- [bndy-live](https://github.com/bndy/bndy-live): Events discovery platform
