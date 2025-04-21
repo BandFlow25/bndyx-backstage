@@ -1,14 +1,54 @@
 //path: src/app/components/AppHeader.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { BndyLogo, useAuth } from 'bndy-ui';
-import { Menu, X, LogIn, LogOut, User } from 'lucide-react';
+import { BndyLogo } from 'bndy-ui';
+import { useAuth } from 'bndy-ui/components/auth';
+import { Menu, X, LogIn, LogOut, User, Bug, X as CloseIcon } from 'lucide-react';
+import { jwtDecode } from 'jwt-decode';
+
+// Interface for decoded token data
+interface DecodedToken {
+  uid: string;
+  email?: string;
+  roles?: string[];
+  displayName?: string | null;
+  photoURL?: string | null;
+  godMode?: boolean;
+  exp: number;
+  iat?: number;
+  [key: string]: any;
+}
 
 export function AppHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showDebugPopup, setShowDebugPopup] = useState(false);
+  const [tokenInfo, setTokenInfo] = useState<DecodedToken | null>(null);
   const { currentUser, signOut } = useAuth();
+  
+  // Only admin users should see the debug icon
+  // Using type assertion to avoid TypeScript errors
+  const isAdmin = currentUser?.roles?.includes('admin' as any) || false;
+  const hasGodMode = Array.isArray(currentUser?.roles) && 
+    (currentUser?.roles?.includes('GODMODE' as any) || (currentUser as any)?.godMode === true);
+  const showDebugIcon = isAdmin || hasGodMode;
+  
+  // Load token info when debug popup is opened
+  useEffect(() => {
+    if (showDebugPopup) {
+      try {
+        const token = localStorage.getItem('bndyAuthToken');
+        if (token) {
+          const decoded = jwtDecode<DecodedToken>(token);
+          setTokenInfo(decoded);
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        setTokenInfo(null);
+      }
+    }
+  }, [showDebugPopup]);
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -50,6 +90,17 @@ export function AppHeader() {
 
             {currentUser ? (
               <div className="flex items-center ml-4">
+                {/* Debug icon - only shown for admin/godMode users */}
+                {showDebugIcon && (
+                  <button
+                    onClick={() => setShowDebugPopup(true)}
+                    className="flex items-center justify-center mr-3 p-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors"
+                    title="Authentication Debug"
+                  >
+                    <Bug size={22} className="text-orange-500" />
+                  </button>
+                )}
+                
                 <Link
                   href="/account"
                   className="flex items-center justify-center mr-3 p-1 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors"
@@ -70,12 +121,16 @@ export function AppHeader() {
                 </button>
               </div>
             ) : (
-              <Link href="/login">
-                <div className="ml-4 flex items-center px-3 py-2 rounded-md text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors">
+              <a
+                href="https://localhost:3001/login?returnTo=http%3A%2F%2Flocalhost%3A3002"
+                target="_self"
+                className="block py-2 px-4 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              >
+                <div className="flex items-center">
                   <LogIn size={16} className="mr-1" />
-                  Sign in
+                  <span>Log In</span>
                 </div>
-              </Link>
+              </a>
             )}
           </nav>
 
@@ -152,8 +207,9 @@ export function AppHeader() {
                 </button>
               </>
             ) : (
-              <Link 
-                href="/login"
+              <a 
+                href="https://localhost:3001/login?returnTo=http%3A%2F%2Flocalhost%3A3002"
+                target="_self"
                 onClick={() => setIsMenuOpen(false)}
                 className="w-full mt-2 block"
               >
@@ -161,8 +217,85 @@ export function AppHeader() {
                   <LogIn size={16} className="mr-1" />
                   Sign in
                 </div>
-              </Link>
+              </a>
             )}
+          </div>
+        </div>
+      )}
+      
+      {/* Debug Popup */}
+      {showDebugPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-xl font-semibold text-gray-900">Authentication Debug</h3>
+              <button 
+                onClick={() => setShowDebugPopup(false)}
+                className="p-1 rounded-full hover:bg-gray-100"
+              >
+                <CloseIcon size={20} />
+              </button>
+            </div>
+            
+            <div className="p-4 overflow-auto max-h-[calc(90vh-130px)]">
+              {tokenInfo ? (
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <h4 className="font-medium mb-2">User Information</h4>
+                      <div className="bg-gray-50 p-3 rounded">
+                        <p><strong>UID:</strong> {tokenInfo.uid}</p>
+                        <p><strong>Email:</strong> {tokenInfo.email || 'Not set'}</p>
+                        <p><strong>Display Name:</strong> {tokenInfo.displayName || 'Not set'}</p>
+                        <p><strong>Expires:</strong> {new Date(tokenInfo.exp * 1000).toLocaleString()}</p>
+                        <p><strong>Expires In:</strong> {((tokenInfo.exp * 1000 - Date.now()) / 1000 / 60).toFixed(2)} minutes</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium mb-2">Roles & Permissions</h4>
+                      <div className="bg-gray-50 p-3 rounded">
+                        <p><strong>Roles:</strong></p>
+                        <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-24">
+                          {JSON.stringify(tokenInfo.roles, null, 2) || 'None'}
+                        </pre>
+                        <p className="mt-2"><strong>GodMode:</strong> {tokenInfo.godMode === true ? 'Yes' : 'No'}</p>
+                        <p><strong>Properties:</strong> {Object.keys(tokenInfo).join(', ')}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">Full Token Contents</h4>
+                    <pre className="bg-gray-50 p-3 rounded text-xs overflow-auto max-h-60">
+                      {JSON.stringify(tokenInfo, null, 2)}
+                    </pre>
+                  </div>
+                  
+                  <div className="mt-4 flex justify-end gap-2">
+                    <button 
+                      onClick={() => {
+                        localStorage.removeItem('bndyAuthToken');
+                        window.location.reload();
+                      }}
+                      className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                    >
+                      Clear Token & Reload
+                    </button>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    >
+                      Refresh Page
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No token information available</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

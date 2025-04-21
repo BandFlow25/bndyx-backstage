@@ -1,33 +1,221 @@
 //path: src/app/page.tsx
 'use client';
 
-import React, { useState } from 'react';
-import { AuthProvider, FullFooter, BndyLogo } from 'bndy-ui';
+import React, { useState, useEffect } from 'react';
+import { FullFooter, BndyLogo } from 'bndy-ui';
 import { AppHeader } from './components/AppHeader';
 import { Music, MapPin, Calendar, Users, Star, ExternalLink, Sparkles, MessageCircle, Image, BarChart3, Building } from 'lucide-react';
 import Link from 'next/link';
 import { personas, PersonaType } from './lib/personas';
+import { useRouter } from 'next/navigation';
+
+// Define the JWT payload interface to match our token structure
+interface BndyJwtPayload {
+  uid: string;
+  email?: string;
+  displayName?: string | null;
+  roles?: string[];
+  exp: number;
+  iat?: number;
+}
+
+// Token info interface for display
+interface TokenInfo {
+  token: string;
+  decoded: BndyJwtPayload;
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  roles: string[];
+  exp: string;
+  expiresIn: string;
+  allProperties: string[];
+}
 
 export default function Home() {
   const [activePersona, setActivePersona] = useState<PersonaType>('band');
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
   const currentPersona = personas[activePersona];
+  const router = useRouter();
+  
+  // Performance timing helper
+  const logPerf = (step: string, startTime: number) => {
+    const elapsed = Date.now() - startTime;
+    console.log(`PERF_HOME: ${step} - ${elapsed}ms`);
+    return elapsed;
+  };
+
+  // Inspect authentication state and measure performance
+  useEffect(() => {
+    const startTime = Date.now();
+    console.log('AUTH_FLOW: Home page checking URL for token parameter');
+    
+    // First check URL for token parameter (faster)
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    if (urlToken) {
+      console.log(`AUTH_FLOW: Found token in URL (${logPerf('token_in_url', startTime)}ms)`);      
+      localStorage.setItem('bndyAuthToken', urlToken);
+      
+      // Clean up URL
+      logPerf('before_url_cleanup', startTime);
+      params.delete('token');
+      const newUrl = window.location.pathname + 
+                    (params.toString() ? `?${params.toString()}` : '') + 
+                    window.location.hash;
+      window.history.replaceState({}, document.title, newUrl);
+      logPerf('after_url_cleanup', startTime);
+      
+      // Force redirect to dashboard
+      console.log(`AUTH_FLOW: Redirecting to dashboard (${logPerf('before_dashboard_redirect', startTime)}ms)`);
+      router.push('/dashboard');
+      return;
+    }
+    
+    logPerf('url_token_check_complete', startTime);
+    const token = localStorage.getItem('bndyAuthToken');
+    const debugInfoElement = document.getElementById('auth-debug-info');
+    
+    // Update debug panel with initial state
+    if (debugInfoElement) {
+      debugInfoElement.textContent = JSON.stringify({
+        tokenExists: !!token,
+        timestamp: new Date().toISOString(),
+        message: token ? 'Token found in localStorage, decoding...' : 'No token found in localStorage'
+      }, null, 2);
+    }
+    
+    if (token) {
+      try {
+        // Log token details (without exposing sensitive parts)
+        const tokenStart = token.substring(0, 10);
+        const tokenEnd = token.substring(token.length - 10);
+        console.log(`HOME PAGE: Token found: ${tokenStart}...${tokenEnd}`);
+        
+        // Import jwtDecode dynamically to inspect token contents
+        import('jwt-decode').then(({ jwtDecode }) => {
+          try {
+            const decoded = jwtDecode<BndyJwtPayload>(token);
+            
+            // Log the complete decoded token for debugging
+            console.log('HOME PAGE: Full decoded token:', decoded);
+            
+            // Log specific token details
+            console.log('HOME PAGE: Decoded token details:', {
+              uid: decoded.uid,
+              email: decoded.email,
+              displayName: decoded.displayName || null,
+              roles: decoded.roles || [],
+              exp: new Date(decoded.exp * 1000).toISOString()
+            });
+            
+            // Update debug panel with token information
+            if (debugInfoElement) {
+              debugInfoElement.textContent = JSON.stringify({
+                tokenExists: true,
+                tokenDecoded: true,
+                tokenDetails: {
+                  uid: decoded.uid,
+                  email: decoded.email,
+                  displayName: decoded.displayName || null,
+                  roles: decoded.roles || [],
+                  exp: new Date(decoded.exp * 1000).toISOString(),
+                  expiresIn: ((decoded.exp * 1000 - Date.now()) / 1000 / 60).toFixed(2) + ' minutes',
+                  allProperties: Object.keys(decoded)
+                },
+                message: 'Token successfully decoded. Check if user state is set in auth context.',
+                timestamp: new Date().toISOString()
+              }, null, 2);
+            }
+            
+            // Store token info for display in the debug panel
+            setTokenInfo({
+              token: token,
+              decoded: decoded,
+              uid: decoded.uid,
+              email: decoded.email || null,
+              displayName: decoded.displayName || null,
+              roles: decoded.roles || [],
+              exp: new Date(decoded.exp * 1000).toISOString(),
+              expiresIn: ((decoded.exp * 1000 - Date.now()) / 1000 / 60).toFixed(2) + ' minutes',
+              allProperties: Object.keys(decoded)
+            });
+            
+            // Check if token is expired
+            if (decoded.exp * 1000 < Date.now()) {
+              console.log('HOME PAGE: Token is expired, removing from localStorage');
+              localStorage.removeItem('bndyAuthToken');
+              
+              if (debugInfoElement) {
+                debugInfoElement.textContent = JSON.stringify({
+                  tokenExists: true,
+                  tokenDecoded: true,
+                  error: 'Token is expired',
+                  timestamp: new Date().toISOString()
+                }, null, 2);
+              }
+            } else {
+              console.log('HOME PAGE: Token is valid, user should be authenticated');
+              console.log('HOME PAGE: IMPORTANT - Automatic redirect to dashboard has been disabled for debugging');
+            }
+          } catch (decodeError) {
+            console.error('HOME PAGE: Error decoding token:', decodeError);
+            localStorage.removeItem('bndyAuthToken');
+            
+            if (debugInfoElement) {
+              debugInfoElement.textContent = JSON.stringify({
+                tokenExists: true,
+                tokenDecoded: false,
+                error: 'Failed to decode token: ' + (decodeError instanceof Error ? decodeError.message : String(decodeError)),
+                timestamp: new Date().toISOString()
+              }, null, 2);
+            }
+          }
+        });
+      } catch (error) {
+        console.error('HOME PAGE: Error processing token:', error);
+        
+        if (debugInfoElement) {
+          debugInfoElement.textContent = JSON.stringify({
+            tokenExists: true,
+            error: 'Error processing token: ' + (error instanceof Error ? error.message : String(error)),
+            timestamp: new Date().toISOString()
+          }, null, 2);
+        }
+      }
+    } else {
+      console.log('HOME PAGE: No authentication token found');
+    }
+  }, [router]);
   
   return (
-    <AuthProvider>
-      <main className="min-h-screen flex flex-col">
+    <main className="min-h-screen flex flex-col">
         <AppHeader />
         
         {/* Hero Section */}
         <section className="pt-16 pb-12 px-4 bg-gradient-to-b from-slate-900 to-slate-800 text-white">
+          {/* Debug controls - hidden in the UI but still accessible programmatically */}
+          <div id="auth-debug-info" className="hidden"></div>
+          
           <div className="max-w-6xl mx-auto text-center">
             <div className="flex justify-end mb-4">
               <div className="flex gap-2">
-                <Link href="/login" className="px-4 py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-white transition-all">
+                <a 
+                  href="https://localhost:3001/login?returnTo=http%3A%2F%2Flocalhost%3A3002" 
+                  target="_self" 
+                  className="px-4 py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-white transition-all"
+                  onClick={() => console.log('HOME PAGE: Login button clicked, redirecting to auth service')}
+                >
                   Log In
-                </Link>
-                <Link href="/register" className="px-4 py-2 rounded-md bg-orange-500 hover:bg-orange-600 text-white transition-all">
+                </a>
+                <a 
+                  href="https://localhost:3001/login?tab=signup&returnTo=http%3A%2F%2Flocalhost%3A3002" 
+                  target="_self" 
+                  className="px-4 py-2 rounded-md bg-orange-500 hover:bg-orange-600 text-white transition-all"
+                  onClick={() => console.log('HOME PAGE: Signup button clicked, redirecting to auth service')}
+                >
                   Sign Up
-                </Link>
+                </a>
               </div>
             </div>
             
@@ -232,12 +420,13 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
-                href="/login" 
+              <a 
+                href="https://localhost:3001/login?returnTo=http%3A%2F%2Flocalhost%3A3002"
+                target="_self"
                 className={`px-8 py-3 rounded-full bg-white ${activePersona === 'band' ? 'text-orange-600 hover:bg-orange-50 shadow-orange-500/20' : activePersona === 'venue' ? 'text-blue-600 hover:bg-blue-50 shadow-blue-500/20' : 'text-green-600 hover:bg-green-50 shadow-green-500/20'} font-medium text-lg shadow-lg transition-all inline-flex items-center justify-center`}
               >
                 Get Started Free
-              </Link>
+              </a>
               
               <a 
                 href="https://my.bndy.co.uk" 
@@ -253,6 +442,5 @@ export default function Home() {
         
         <FullFooter badgePath={"/assets/images/BndyBeatBadge.png"} className="mt-auto" />
       </main>
-    </AuthProvider>
   );
 }

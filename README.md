@@ -2,6 +2,22 @@
 
 bndy-core is the backstage management platform for bands, artists, and venues (BAVs) within the bndy ecosystem. It provides powerful tools for profile management, setlist creation, song pipelines, calendar management, and more.
 
+## Recent Updates
+
+- **UI Improvements**: Enhanced mobile navigation with consolidated menu controls
+- **Dark/Light Mode**: Added theme toggle functionality in the header
+- **Artist Context**: Improved artist selection and context switching
+
+## Shared Types
+
+All type definitions for artists, members, genres, and related entities are defined in the [bndy-types](../bndy-types) package. **Always import shared types from `bndy-types` and do not duplicate type definitions locally.**
+
+Example usage:
+
+```ts
+import { Artist, ArtistMember, MusicGenre } from 'bndy-types';
+```
+
 ## Features
 
 - **Profile Management**: Create and manage artist/band/venue profiles

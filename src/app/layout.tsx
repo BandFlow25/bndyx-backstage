@@ -5,9 +5,10 @@ import './theme.css';
 
 // Import AuthProvider from bndy-ui
 import { AuthProvider } from 'bndy-ui/components/auth';
-
-// Initialize Firebase if needed
-// import { initFirebase } from 'bndy-ui';
+// Import ArtistProvider
+import { ArtistProvider } from '@/lib/context/artist-context';
+// Initialize Firebase
+import { initializeFirebase } from '@/lib/firebase';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -15,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'bndy-core | BAV Management Platform',
+  title: 'bndy | Backstage',
   description: 'Backstage management platform for bands, artists, and venues',
 };
 
@@ -24,11 +25,18 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Initialize Firebase on the client side
+  if (typeof window !== 'undefined') {
+    initializeFirebase();
+  }
+  
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased bg-slate-900 text-white`}>
         <AuthProvider>
-          {children}
+          <ArtistProvider>
+            {children}
+          </ArtistProvider>
         </AuthProvider>
       </body>
     </html>
