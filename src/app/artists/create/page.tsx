@@ -7,17 +7,18 @@ import { useAuth } from 'bndy-ui/components/auth';
 import { useArtist } from '@/lib/context/artist-context';
 import { useTheme } from '@/lib/context/theme-context';
 import { ArtistService } from '@/lib/services/artist-service';
-import { CreateArtistData, Artist, MusicGenre, ArtistMember } from 'bndy-types';
+import { CreateArtistData, Artist, MusicGenre, ArtistMember, getAvailableMusicGenres } from 'bndy-types';
 import { validateSocialMediaUrl } from '@/lib/utils/social-media-utils';
-import { Music, MapPin, Check, X, Upload, Instagram, Facebook, Twitter, Youtube, Link as LinkIcon } from 'lucide-react';
+import { Music, MapPin, Check, X, Upload, InfoIcon } from 'lucide-react';
 import Link from 'next/link';
+import { PlaceLookup, BndyLoadingScreen } from 'bndy-ui';
+import { RadioButton } from 'bndy-ui/components/ui/RadioButton';
+import { Checkbox } from 'bndy-ui/components/ui/Checkbox';
+import { SocialMediaInput } from 'bndy-ui/components/ui/SocialMediaInput';
+import type { SocialMediaLink } from 'bndy-ui/components/ui/SocialMediaInput';
 
-// List of available genres
-const AVAILABLE_GENRES: MusicGenre[] = [
-  'Rock', 'Pop', 'Country', 'R&B', 'Disco', 'Jazz', 'Reggae', 'Metal', 'Folk', 'Classical', 'Electronic', 'Other'
-];
-
-import { BndyLoadingScreen } from 'bndy-ui';
+// Get available genres from the shared utility function
+const AVAILABLE_GENRES = getAvailableMusicGenres();
 
 const CreateArtistPage = () => {
   const { currentUser } = useAuth();
@@ -39,13 +40,13 @@ const CreateArtistPage = () => {
   const [youtube, setYoutube] = useState('');
   const [website, setWebsite] = useState('');
   
-  // Social media validation
-  const [instagramError, setInstagramError] = useState<string | null>(null);
-  const [facebookError, setFacebookError] = useState<string | null>(null);
-  const [spotifyError, setSpotifyError] = useState<string | null>(null);
-  const [twitterError, setTwitterError] = useState<string | null>(null);
-  const [youtubeError, setYoutubeError] = useState<string | null>(null);
-  const [websiteError, setWebsiteError] = useState<string | null>(null);
+  // New form state for artist type, multiple formats, and covers/originals
+  const [artistType, setArtistType] = useState<'solo' | 'band'>('band');
+  const [enableMultipleFormats, setEnableMultipleFormats] = useState<boolean>(false);
+  const [musicType, setMusicType] = useState<string[]>([]); // Changed to array for multiple selection of covers/originals
+  
+  // Social media links
+  const [socialMediaLinks, setSocialMediaLinks] = useState<SocialMediaLink[]>([]);
   
   // UI state
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -108,61 +109,6 @@ const CreateArtistPage = () => {
     }
   };
 
-  // Validate social media URLs
-  const validateSocialMediaUrls = () => {
-    let isValid = true;
-    
-    // Instagram
-    if (instagram && !validateSocialMediaUrl(instagram, 'instagram')) {
-      setInstagramError('Please enter a valid Instagram URL');
-      isValid = false;
-    } else {
-      setInstagramError(null);
-    }
-    
-    // Facebook
-    if (facebook && !validateSocialMediaUrl(facebook, 'facebook')) {
-      setFacebookError('Please enter a valid Facebook URL');
-      isValid = false;
-    } else {
-      setFacebookError(null);
-    }
-    
-    // Spotify
-    if (spotify && !validateSocialMediaUrl(spotify, 'spotify')) {
-      setSpotifyError('Please enter a valid Spotify URL');
-      isValid = false;
-    } else {
-      setSpotifyError(null);
-    }
-    
-    // Twitter
-    if (twitter && !validateSocialMediaUrl(twitter, 'twitter')) {
-      setTwitterError('Please enter a valid Twitter URL');
-      isValid = false;
-    } else {
-      setTwitterError(null);
-    }
-    
-    // YouTube
-    if (youtube && !validateSocialMediaUrl(youtube, 'youtube')) {
-      setYoutubeError('Please enter a valid YouTube URL');
-      isValid = false;
-    } else {
-      setYoutubeError(null);
-    }
-    
-    // Website
-    if (website && !validateSocialMediaUrl(website, 'website')) {
-      setWebsiteError('Please enter a valid website URL');
-      isValid = false;
-    } else {
-      setWebsiteError(null);
-    }
-    
-    return isValid;
-  };
-  
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,12 +123,6 @@ const CreateArtistPage = () => {
       return;
     }
     
-    // Validate social media URLs
-    if (!validateSocialMediaUrls()) {
-      setError('Please correct the errors in the social media links');
-      return;
-    }
-    
     try {
       setLoading(true);
       setError(null);
@@ -193,14 +133,20 @@ const CreateArtistPage = () => {
         hometown,
         genres: selectedGenres,
         description,
-        socialMedia: {
-          instagram: instagram || undefined,
-          facebook: facebook || undefined,
-          spotify: spotify || undefined,
-          twitter: twitter || undefined,
-          youtube: youtube || undefined,
-          website: website || undefined
-        }
+        // Add new fields
+        artistType,
+        enableMultipleFormats,
+        musicType, // Allow empty array if neither option is selected
+        socialMedia: socialMediaLinks.reduce((obj, link) => {
+          // Handle backward compatibility for twitter/x
+          if (link.platform === 'x') {
+            obj.twitter = link.url; // Keep for backward compatibility
+            obj.x = link.url;
+          } else {
+            obj[link.platform] = link.url;
+          }
+          return obj;
+        }, {} as Record<string, string>)
       };
       
       // Create the artist
@@ -257,6 +203,28 @@ const CreateArtistPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Left column */}
             <div>
+              {/* Artist Type Selection */}
+              <div className="mb-6">
+                <label className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
+                  Artist Type*
+                </label>
+                <div className="flex space-x-4">
+                  <RadioButton 
+                    name="artistType" 
+                    value="solo" 
+                    checked={artistType === 'solo'} 
+                    onChange={() => setArtistType('solo')}
+                    label="Solo Artist"
+                  />
+                  <RadioButton 
+                    name="artistType" 
+                    value="band" 
+                    checked={artistType === 'band'} 
+                    onChange={() => setArtistType('band')}
+                    label="Band/Group"
+                  />
+                </div>
+              </div>
               <div className="mb-6">
                 <label htmlFor="name" className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
                   Artist/Band Name*
@@ -296,19 +264,45 @@ const CreateArtistPage = () => {
               </div>
 
               <div className="mb-6">
+                <label className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
+                  Music Type*
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['covers', 'originals'].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        if (musicType.includes(type)) {
+                          setMusicType(musicType.filter(t => t !== type));
+                        } else {
+                          setMusicType([...musicType, type]);
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        musicType.includes(type) ? 'bg-orange-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6">
                 <label htmlFor="hometown" className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
                   Hometown*
                 </label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
-                  <input
-                    type="text"
-                    id="hometown"
+                  <PlaceLookup
                     value={hometown}
-                    onChange={(e) => setHometown(e.target.value)}
-                    className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
-                    required
-                    maxLength={50}
+                    onChange={(value) => {
+                      console.log('PlaceLookup onChange called with value:', value);
+                      setHometown(value);
+                    }}
+                    placeholder="Start typing a UK city or town"
+                    id="hometown"
+                    className="bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-orange-500"
                   />
                 </div>
               </div>
@@ -430,148 +424,46 @@ const CreateArtistPage = () => {
                   Social Media Links
                 </label>
                 
-                <div className="space-y-3">
-                  {/* Instagram */}
-                  <div className="relative">
-                    <Instagram className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
-                    <input
-                      type="url"
-                      placeholder="Instagram URL"
-                      value={instagram}
-                      onChange={(e) => {
-                        setInstagram(e.target.value);
-                        const isValid = validateSocialMediaUrl(e.target.value, 'instagram');
-                        setInstagramError(e.target.value && !isValid ? 'Please enter a valid Instagram URL' : null);
-                      }}
-                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
-                    />
-                    {instagramError && (
-                      <p className="text-red-500 text-xs mt-1">{instagramError}</p>
-                    )}
-                  </div>
-                  
-                  {/* Facebook */}
-                  <div className="relative">
-                    <Facebook className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
-                    <input
-                      type="url"
-                      placeholder="Facebook URL"
-                      value={facebook}
-                      onChange={(e) => {
-                        setFacebook(e.target.value);
-                        const isValid = validateSocialMediaUrl(e.target.value, 'facebook');
-                        setFacebookError(e.target.value && !isValid ? 'Please enter a valid Facebook URL' : null);
-                      }}
-                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
-                    />
-                    {facebookError && (
-                      <p className="text-red-500 text-xs mt-1">{facebookError}</p>
-                    )}
-                  </div>
-                  
-                  {/* Spotify */}
-                  <div className="relative">
-                    <Music className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
-                    <input
-                      type="url"
-                      placeholder="Spotify URL"
-                      value={spotify}
-                      onChange={(e) => {
-                        setSpotify(e.target.value);
-                        const isValid = validateSocialMediaUrl(e.target.value, 'spotify');
-                        setSpotifyError(e.target.value && !isValid ? 'Please enter a valid Spotify URL' : null);
-                      }}
-                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
-                    />
-                    {spotifyError && (
-                      <p className="text-red-500 text-xs mt-1">{spotifyError}</p>
-                    )}
-                  </div>
-                  
-                  {/* Twitter */}
-                  <div className="relative">
-                    <Twitter className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
-                    <input
-                      type="url"
-                      placeholder="Twitter URL"
-                      value={twitter}
-                      onChange={(e) => {
-                        setTwitter(e.target.value);
-                        const isValid = validateSocialMediaUrl(e.target.value, 'twitter');
-                        setTwitterError(e.target.value && !isValid ? 'Please enter a valid Twitter URL' : null);
-                      }}
-                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
-                    />
-                    {twitterError && (
-                      <p className="text-red-500 text-xs mt-1">{twitterError}</p>
-                    )}
-                  </div>
-                  
-                  {/* YouTube */}
-                  <div className="relative">
-                    <Youtube className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
-                    <input
-                      type="url"
-                      placeholder="YouTube URL"
-                      value={youtube}
-                      onChange={(e) => {
-                        setYoutube(e.target.value);
-                        const isValid = validateSocialMediaUrl(e.target.value, 'youtube');
-                        setYoutubeError(e.target.value && !isValid ? 'Please enter a valid YouTube URL' : null);
-                      }}
-                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
-                    />
-                    {youtubeError && (
-                      <p className="text-red-500 text-xs mt-1">{youtubeError}</p>
-                    )}
-                  </div>
-                  
-                  {/* Website */}
-                  <div className="relative">
-                    <LinkIcon className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
-                    <input
-                      type="url"
-                      placeholder="Website URL"
-                      value={website}
-                      onChange={(e) => {
-                        setWebsite(e.target.value);
-                        const isValid = validateSocialMediaUrl(e.target.value, 'website');
-                        setWebsiteError(e.target.value && !isValid ? 'Please enter a valid website URL' : null);
-                      }}
-                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
-                    />
-                    {websiteError && (
-                      <p className="text-red-500 text-xs mt-1">{websiteError}</p>
-                    )}
-                  </div>
+                <SocialMediaInput 
+                  links={socialMediaLinks} 
+                  onChange={setSocialMediaLinks}
+                  className="mb-4"
+                />
+                
+                {/* Multiple Formats Option - Inside social media section */}
+                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+                  <Checkbox
+                    id="enableMultipleFormats"
+                    checked={enableMultipleFormats}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEnableMultipleFormats(e.target.checked)}
+                    label="Enable Multiple Formats/Shows"
+                    helpText={enableMultipleFormats ? "You'll be able to create and manage different formats after setup." : undefined}
+                    helpIcon={
+                      <div className="group relative">
+                        <InfoIcon className="h-4 w-4 text-slate-500 cursor-help" />
+                        <div className="absolute left-full ml-2 w-64 bg-white dark:bg-slate-700 p-2 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
+                          Multiple formats allow you to create different versions of your artist profile (e.g., full band, acoustic duo, solo shows) with their own bookings, playbooks, and setlists.
+                        </div>
+                      </div>
+                    }
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-4 mt-8">
+          <div className="flex justify-end gap-4 mt-6">
             <button
               type="button"
               onClick={() => router.push('/artists')}
-              className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors duration-300"
-            >
+              className="px-6 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium transition-colors duration-300 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white">
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center"
-            >
-              {loading ? (
-                <>
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Music className="mr-2 h-5 w-5" />
-                  Create Artist
-                </>
-              )}
+              className="px-6 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+              {loading ? 'Creating...' : 'Create Artist'}
             </button>
           </div>
         </form>

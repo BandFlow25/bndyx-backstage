@@ -7,6 +7,9 @@ import './theme.css';
 import { AuthProvider } from 'bndy-ui/components/auth';
 import { ArtistProvider } from '@/lib/context/artist-context';
 import { ThemeProvider } from '@/lib/context/theme-context';
+import { GoogleMapsProvider } from 'bndy-ui/components/providers/GoogleMapsProvider';
+// Use explicit type import to resolve type compatibility issues
+import type { ReactNode } from 'react';
 // Initialize Firebase
 import { initializeFirebase } from '@/lib/firebase';
 
@@ -23,7 +26,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   // Initialize Firebase on the client side
   if (typeof window !== 'undefined') {
@@ -39,7 +42,10 @@ export default function RootLayout({
         <AuthProvider>
           <ArtistProvider>
             <ThemeProvider>
-              {children}
+              {/* The type issue is due to different React versions between packages */}
+              <GoogleMapsProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+                <>{children}</>
+              </GoogleMapsProvider>
             </ThemeProvider>
           </ArtistProvider>
         </AuthProvider>

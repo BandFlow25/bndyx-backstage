@@ -185,7 +185,7 @@ const Sidebar: React.FC = () => {
               &copy; {new Date().getFullYear()} bndy
             </div>
             <div className="text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors duration-300">
-              Keeping <span className="text-cyan-500">LIVE</span> music <span className="text-orange-500">ALIVE</span>
+              Keeping <span className="text-cyan-500">LIVE</span> Music <span className="text-orange-500">ALIVE</span>
             </div>
             
             <button 

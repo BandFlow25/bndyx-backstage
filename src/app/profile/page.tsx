@@ -240,7 +240,10 @@ function ProfileContent() {
                   <div className="relative">
                     <PlaceLookup
                       value={hometown}
-                      onChange={(value) => setHometown(value)}
+                      onChange={(value) => {
+                        console.log('Profile Page - PlaceLookup onChange called with value:', value);
+                        setHometown(value);
+                      }}
                       placeholder="Start typing a UK city or town"
                       id="hometown"
                       className="bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-orange-500"

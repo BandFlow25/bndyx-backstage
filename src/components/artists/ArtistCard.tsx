@@ -14,8 +14,8 @@ interface ArtistCardProps {
 export default function ArtistCard({ artist, className = '' }: ArtistCardProps) {
   return (
     <div className={`bg-white dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-orange-500 transition-colors ${className}`}>
+      {/* Header Image - Inside Link */}
       <Link href={`/artists/${artist.id}`} className="block">
-        {/* Header Image */}
         <div className="h-32 bg-slate-100 dark:bg-slate-700 relative transition-colors duration-300">
           {artist.headerImageUrl ? (
             <img 
@@ -46,9 +46,11 @@ export default function ArtistCard({ artist, className = '' }: ArtistCardProps) 
             </div>
           </div>
         </div>
-        
-        {/* Content */}
-        <div className="p-4 pt-10">
+      </Link>
+      
+      {/* Content - Outside Link to avoid nesting <a> tags */}
+      <div className="p-4 pt-10">
+        <Link href={`/artists/${artist.id}`} className="block">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 truncate transition-colors duration-300">{artist.name}</h3>
           
           {artist.hometown && (
@@ -61,17 +63,18 @@ export default function ArtistCard({ artist, className = '' }: ArtistCardProps) 
           {artist.description && (
             <p className="text-slate-600 dark:text-slate-300 text-sm mb-3 line-clamp-2 transition-colors duration-300">{artist.description}</p>
           )}
-          
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center text-slate-500 dark:text-slate-400 text-sm transition-colors duration-300">
-              <Users className="h-4 w-4 mr-1.5" />
-              <span>{artist.members.length} {artist.members.length === 1 ? 'Member' : 'Members'}</span>
-            </div>
-            
-            <SocialMediaLinks socialMedia={artist.socialMedia ?? {}} size="small" />
+        </Link>
+        
+        <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center text-slate-500 dark:text-slate-400 text-sm transition-colors duration-300">
+            <Users className="h-4 w-4 mr-1.5" />
+            <span>{artist.members.length} {artist.members.length === 1 ? 'Member' : 'Members'}</span>
           </div>
+          
+          {/* Social media links moved outside of Link component to avoid nested <a> tags */}
+          <SocialMediaLinks socialMedia={artist.socialMedia ?? {}} size="small" />
         </div>
-      </Link>
+      </div>
     </div>
   );
 }

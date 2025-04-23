@@ -157,7 +157,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             >
               Log In
             </a>
-            <p className="mt-6 text-sm text-slate-400">Keeping <span className="text-cyan-500">LIVE</span> music <span className="text-orange-500">ALIVE</span></p>
+            <p className="mt-6 text-sm text-slate-400">Keeping <span className="text-cyan-500">LIVE</span> Music <span className="text-orange-500">ALIVE</span></p>
           </div>
         </div>
       </div>

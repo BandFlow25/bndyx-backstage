@@ -6,16 +6,19 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from 'bndy-ui/components/auth';
 import { useArtist } from '@/lib/context/artist-context';
 import { ArtistService } from '@/lib/services/artist-service';
-import { Artist, MusicGenre, ArtistMember } from 'bndy-types';
+import { Artist, MusicGenre, ArtistMember, getAvailableMusicGenres } from 'bndy-types';
 import { validateSocialMediaUrl } from '@/lib/utils/social-media-utils';
-import { Music, MapPin, Check, X, Upload, Instagram, Facebook, Twitter, Youtube, Link as LinkIcon } from 'lucide-react';
+import { Music, MapPin, Check, X, Upload, InfoIcon } from 'lucide-react';
+import { PlaceLookup } from 'bndy-ui';
+import { RadioButton } from 'bndy-ui/components/ui/RadioButton';
+import { Checkbox } from 'bndy-ui/components/ui/Checkbox';
+import { SocialMediaInput } from 'bndy-ui/components/ui/SocialMediaInput';
+import type { SocialMediaLink } from 'bndy-ui/components/ui/SocialMediaInput';
 import Link from 'next/link';
 import Image from 'next/image';
 
-// List of available genres
-const availableGenres: MusicGenre[] = [
-  'Rock', 'Pop', 'Country', 'R&B', 'Disco', 'Jazz', 'Reggae', 'Metal', 'Folk', 'Classical', 'Electronic', 'Other'
-];
+// Get available genres from the shared utility function
+const AVAILABLE_GENRES = getAvailableMusicGenres();
 
 const EditArtistPage = () => {
   const { currentUser } = useAuth();
@@ -42,13 +45,13 @@ const EditArtistPage = () => {
   const [youtube, setYoutube] = useState('');
   const [website, setWebsite] = useState('');
   
-  // Social media validation
-  const [instagramError, setInstagramError] = useState<string | null>(null);
-  const [facebookError, setFacebookError] = useState<string | null>(null);
-  const [spotifyError, setSpotifyError] = useState<string | null>(null);
-  const [twitterError, setTwitterError] = useState<string | null>(null);
-  const [youtubeError, setYoutubeError] = useState<string | null>(null);
-  const [websiteError, setWebsiteError] = useState<string | null>(null);
+  // New form state for artist type, multiple formats, and covers/originals
+  const [artistType, setArtistType] = useState<'solo' | 'band'>('band');
+  const [enableMultipleFormats, setEnableMultipleFormats] = useState<boolean>(false);
+  const [musicType, setMusicType] = useState<string[]>([]); // Changed to array for multiple selection of covers/originals
+  
+  // Social media links
+  const [socialMediaLinks, setSocialMediaLinks] = useState<SocialMediaLink[]>([]);
   
   // Image upload state
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -90,14 +93,40 @@ const EditArtistPage = () => {
         setDescription(artistData.description || '');
         setSelectedGenres(artistData.genres || []);
         
+        // Populate new fields
+        setArtistType(artistData.artistType || 'band');
+        setEnableMultipleFormats(artistData.enableMultipleFormats || false);
+        // Convert string to array if needed for backward compatibility
+        if (artistData.musicType) {
+          setMusicType(Array.isArray(artistData.musicType) ? artistData.musicType : [artistData.musicType]);
+        } else {
+          setMusicType(['both']);
+        }
+        
         // Populate social media fields
         if (artistData.socialMedia) {
-          setInstagram(artistData.socialMedia.instagram || '');
-          setFacebook(artistData.socialMedia.facebook || '');
-          setSpotify(artistData.socialMedia.spotify || '');
-          setTwitter(artistData.socialMedia.twitter || '');
-          setYoutube(artistData.socialMedia.youtube || '');
-          setWebsite(artistData.socialMedia.website || '');
+          const links: SocialMediaLink[] = [];
+          
+          if (artistData.socialMedia.instagram) {
+            links.push({ platform: 'instagram', url: artistData.socialMedia.instagram });
+          }
+          if (artistData.socialMedia.facebook) {
+            links.push({ platform: 'facebook', url: artistData.socialMedia.facebook });
+          }
+          if (artistData.socialMedia.spotify) {
+            links.push({ platform: 'spotify', url: artistData.socialMedia.spotify });
+          }
+          if (artistData.socialMedia.twitter || artistData.socialMedia.x) {
+            links.push({ platform: 'x', url: artistData.socialMedia.twitter || artistData.socialMedia.x || '' });
+          }
+          if (artistData.socialMedia.youtube) {
+            links.push({ platform: 'youtube', url: artistData.socialMedia.youtube });
+          }
+          if (artistData.socialMedia.website) {
+            links.push({ platform: 'website', url: artistData.socialMedia.website });
+          }
+          
+          setSocialMediaLinks(links);
         }
         
         // Set image previews
@@ -159,68 +188,13 @@ const EditArtistPage = () => {
     }
   };
   
-  // Validate social media URLs
-  const validateSocialMedia = () => {
-    let isValid = true;
-    
-    if (instagram) {
-      const isValidInstagram = validateSocialMediaUrl(instagram, 'instagram');
-      setInstagramError(isValidInstagram ? null : 'Invalid Instagram URL');
-      if (!isValidInstagram) isValid = false;
-    } else {
-      setInstagramError(null);
-    }
-    
-    if (facebook) {
-      const isValidFacebook = validateSocialMediaUrl(facebook, 'facebook');
-      setFacebookError(isValidFacebook ? null : 'Invalid Facebook URL');
-      if (!isValidFacebook) isValid = false;
-    } else {
-      setFacebookError(null);
-    }
-    
-    if (spotify) {
-      const isValidSpotify = validateSocialMediaUrl(spotify, 'spotify');
-      setSpotifyError(isValidSpotify ? null : 'Invalid Spotify URL');
-      if (!isValidSpotify) isValid = false;
-    } else {
-      setSpotifyError(null);
-    }
-    
-    if (twitter) {
-      const isValidTwitter = validateSocialMediaUrl(twitter, 'twitter');
-      setTwitterError(isValidTwitter ? null : 'Invalid Twitter URL');
-      if (!isValidTwitter) isValid = false;
-    } else {
-      setTwitterError(null);
-    }
-    
-    if (youtube) {
-      const isValidYoutube = validateSocialMediaUrl(youtube, 'youtube');
-      setYoutubeError(isValidYoutube ? null : 'Invalid YouTube URL');
-      if (!isValidYoutube) isValid = false;
-    } else {
-      setYoutubeError(null);
-    }
-    
-    if (website) {
-      const isValidWebsite = validateSocialMediaUrl(website, 'website');
-      setWebsiteError(isValidWebsite ? null : 'Invalid Website URL');
-      if (!isValidWebsite) isValid = false;
-    } else {
-      setWebsiteError(null);
-    }
-    
-    return isValid;
-  };
+  // Social media validation is handled by the SocialMediaInput component
   
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleUpdateArtist = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Reset submission state
     setIsSubmitting(true);
-    setSubmitError(null);
+    setSubmitError('');
     setSubmitSuccess(false);
     
     // Validate form
@@ -230,12 +204,7 @@ const EditArtistPage = () => {
       return;
     }
     
-    // Validate social media URLs
-    if (!validateSocialMedia()) {
-      setSubmitError('Please correct the errors in your social media links');
-      setIsSubmitting(false);
-      return;
-    }
+    // Social media validation is handled by the SocialMediaInput component
     
     try {
       // Upload images if needed
@@ -266,18 +235,23 @@ const EditArtistPage = () => {
       const updatedArtist: Partial<Artist> = {
         name,
         hometown,
-        description,
         genres: selectedGenres,
+        description,
         avatarUrl,
         headerImageUrl,
-        socialMedia: {
-          instagram,
-          facebook,
-          spotify,
-          twitter,
-          youtube,
-          website
-        }
+        artistType,
+        enableMultipleFormats,
+        musicType, // Allow empty array if neither option is selected
+        socialMedia: socialMediaLinks.reduce((obj, link) => {
+          // Handle backward compatibility for twitter/x
+          if (link.platform === 'x') {
+            obj.twitter = link.url; // Keep for backward compatibility
+            obj.x = link.url;
+          } else {
+            obj[link.platform] = link.url;
+          }
+          return obj;
+        }, {} as Record<string, string>)
       };
       
       await ArtistService.updateArtist(artistId, updatedArtist);
@@ -303,36 +277,36 @@ const EditArtistPage = () => {
     <MainLayout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">Edit Artist Profile</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Edit Artist Profile</h1>
           <Link 
             href={`/artists/${artistId}`}
-            className="px-4 py-2 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors"
+            className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
           >
             Cancel
           </Link>
         </div>
         
         {submitError && (
-          <div className="bg-red-900/20 border border-red-900 text-red-200 p-4 rounded-lg mb-6">
+          <div className="bg-red-100 dark:bg-red-900/20 border border-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg mb-6">
             <p>{submitError}</p>
           </div>
         )}
         
         {submitSuccess && (
-          <div className="bg-green-900/20 border border-green-900 text-green-200 p-4 rounded-lg mb-6 flex items-center">
+          <div className="bg-green-100 dark:bg-green-900/20 border border-green-900 text-green-700 dark:text-green-200 p-4 rounded-lg mb-6 flex items-center">
             <Check className="h-5 w-5 mr-2" />
             <p>Artist profile updated successfully!</p>
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleUpdateArtist} className="space-y-8">
           {/* Basic Information */}
-          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <h2 className="text-xl font-bold text-white mb-4">Basic Information</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Basic Information</h2>
             
             <div className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Artist/Band Name*
                 </label>
                 <input
@@ -340,76 +314,128 @@ const EditArtistPage = () => {
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                   placeholder="Enter artist or band name"
                   required
                 />
               </div>
               
-              <div>
-                <label htmlFor="hometown" className="block text-sm font-medium text-slate-300 mb-1">
+              <div className="mb-4">
+                <label htmlFor="hometown" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Hometown
                 </label>
-                <input
-                  type="text"
-                  id="hometown"
-                  value={hometown}
-                  onChange={(e) => setHometown(e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  placeholder="e.g. London, UK"
-                />
+                <div className="relative">
+                  <PlaceLookup
+                    value={hometown}
+                    onChange={(value) => {
+                      console.log('Artist Edit - PlaceLookup onChange called with value:', value);
+                      setHometown(value);
+                    }}
+                    placeholder="Start typing a UK city or town"
+                    id="hometown"
+                    className="bg-slate-700 border-slate-600 text-white focus:ring-orange-500"
+                  />
+                </div>
               </div>
               
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-1">
+                <label htmlFor="description" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Description
                 </label>
                 <textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 min-h-[100px]"
+                  className="w-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 min-h-[100px]"
                   placeholder="Tell people about your band..."
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Genres
+              {/* Artist Type Selection */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Artist Type*
+                </label>
+                <div className="flex space-x-4">
+                  <RadioButton 
+                    name="artistType" 
+                    value="solo" 
+                    checked={artistType === 'solo'} 
+                    onChange={() => setArtistType('solo')}
+                    label="Solo Artist"
+                  />
+                  <RadioButton 
+                    name="artistType" 
+                    value="band" 
+                    checked={artistType === 'band'} 
+                    onChange={() => setArtistType('band')}
+                    label="Band/Group"
+                  />
+                </div>
+              </div>
+              
+              {/* Music Type Selection */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Music Type*
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {availableGenres.map((genre) => (
+                  {['covers', 'originals'].map((type) => (
                     <button
-                      key={genre}
+                      key={type}
                       type="button"
-                      onClick={() => toggleGenre(genre)}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        selectedGenres.includes(genre)
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      onClick={() => {
+                        if (musicType.includes(type)) {
+                          setMusicType(musicType.filter(t => t !== type));
+                        } else {
+                          setMusicType([...musicType, type]);
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        musicType.includes(type) ? 'bg-orange-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
                       }`}
                     >
-                      {genre}
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Genres
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {AVAILABLE_GENRES.map((genre: MusicGenre) => (
+                      <button
+                        key={genre}
+                        type="button"
+                        onClick={() => toggleGenre(genre)}
+                        className={`px-3 py-1 rounded-full text-sm ${selectedGenres.includes(genre) ? 'bg-orange-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'}`}
+                      >
+                        {genre}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
           
           {/* Images */}
-          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <h2 className="text-xl font-bold text-white mb-4">Profile Images</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Profile Images</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Avatar */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Profile Picture
                 </label>
                 <div className="flex flex-col items-center">
                   <div 
-                    className="w-32 h-32 rounded-full overflow-hidden bg-slate-700 mb-4 relative"
+                    className="w-32 h-32 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 mb-4 relative shadow-md"
                     onClick={() => avatarInputRef.current?.click()}
                   >
                     {avatarPreview ? (
@@ -437,7 +463,7 @@ const EditArtistPage = () => {
                   <button
                     type="button"
                     onClick={() => avatarInputRef.current?.click()}
-                    className="px-4 py-2 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors text-sm"
+                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm"
                   >
                     Change Profile Picture
                   </button>
@@ -446,12 +472,12 @@ const EditArtistPage = () => {
               
               {/* Header Image */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Header Image
                 </label>
                 <div className="flex flex-col items-center">
                   <div 
-                    className="w-full h-32 rounded-lg overflow-hidden bg-slate-700 mb-4 relative"
+                    className="w-full h-32 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 mb-4 relative shadow-md"
                     onClick={() => headerInputRef.current?.click()}
                   >
                     {headerPreview ? (
@@ -461,8 +487,8 @@ const EditArtistPage = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-orange-500/20 to-cyan-500/20">
-                        <Music className="h-12 w-12 text-slate-700" />
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-orange-500/20 to-cyan-500/20 dark:from-orange-500/30 dark:to-cyan-500/30">
+                        <Music className="h-12 w-12 text-slate-700 dark:text-slate-400" />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
@@ -479,7 +505,7 @@ const EditArtistPage = () => {
                   <button
                     type="button"
                     onClick={() => headerInputRef.current?.click()}
-                    className="px-4 py-2 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors text-sm"
+                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm"
                   >
                     Change Header Image
                   </button>
@@ -489,128 +515,45 @@ const EditArtistPage = () => {
           </div>
           
           {/* Social Media */}
-          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <h2 className="text-xl font-bold text-white mb-4">Social Media</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm mb-6">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Social Media</h2>
             
             <div className="space-y-4">
-              <div>
-                <label htmlFor="instagram" className="block text-sm font-medium text-slate-300 mb-1">
-                  Instagram
-                </label>
-                <div className="relative">
-                  <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    id="instagram"
-                    value={instagram}
-                    onChange={(e) => setInstagram(e.target.value)}
-                    className={`w-full bg-slate-700 border ${instagramError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500`}
-                    placeholder="https://instagram.com/yourbandname"
-                  />
-                </div>
-                {instagramError && <p className="text-red-400 text-xs mt-1">{instagramError}</p>}
-              </div>
-              
-              <div>
-                <label htmlFor="facebook" className="block text-sm font-medium text-slate-300 mb-1">
-                  Facebook
-                </label>
-                <div className="relative">
-                  <Facebook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    id="facebook"
-                    value={facebook}
-                    onChange={(e) => setFacebook(e.target.value)}
-                    className={`w-full bg-slate-700 border ${facebookError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500`}
-                    placeholder="https://facebook.com/yourbandname"
-                  />
-                </div>
-                {facebookError && <p className="text-red-400 text-xs mt-1">{facebookError}</p>}
-              </div>
-              
-              <div>
-                <label htmlFor="spotify" className="block text-sm font-medium text-slate-300 mb-1">
-                  Spotify
-                </label>
-                <div className="relative">
-                  <Music className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    id="spotify"
-                    value={spotify}
-                    onChange={(e) => setSpotify(e.target.value)}
-                    className={`w-full bg-slate-700 border ${spotifyError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500`}
-                    placeholder="https://open.spotify.com/artist/..."
-                  />
-                </div>
-                {spotifyError && <p className="text-red-400 text-xs mt-1">{spotifyError}</p>}
-              </div>
-              
-              <div>
-                <label htmlFor="twitter" className="block text-sm font-medium text-slate-300 mb-1">
-                  Twitter
-                </label>
-                <div className="relative">
-                  <Twitter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    id="twitter"
-                    value={twitter}
-                    onChange={(e) => setTwitter(e.target.value)}
-                    className={`w-full bg-slate-700 border ${twitterError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500`}
-                    placeholder="https://twitter.com/yourbandname"
-                  />
-                </div>
-                {twitterError && <p className="text-red-400 text-xs mt-1">{twitterError}</p>}
-              </div>
-              
-              <div>
-                <label htmlFor="youtube" className="block text-sm font-medium text-slate-300 mb-1">
-                  YouTube
-                </label>
-                <div className="relative">
-                  <Youtube className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    id="youtube"
-                    value={youtube}
-                    onChange={(e) => setYoutube(e.target.value)}
-                    className={`w-full bg-slate-700 border ${youtubeError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500`}
-                    placeholder="https://youtube.com/c/yourbandname"
-                  />
-                </div>
-                {youtubeError && <p className="text-red-400 text-xs mt-1">{youtubeError}</p>}
-              </div>
-              
-              <div>
-                <label htmlFor="website" className="block text-sm font-medium text-slate-300 mb-1">
-                  Website
-                </label>
-                <div className="relative">
-                  <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    id="website"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    className={`w-full bg-slate-700 border ${websiteError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500`}
-                    placeholder="https://yourbandname.com"
-                  />
-                </div>
-                {websiteError && <p className="text-red-400 text-xs mt-1">{websiteError}</p>}
-              </div>
+              <SocialMediaInput 
+                links={socialMediaLinks} 
+                onChange={setSocialMediaLinks}
+                className="mb-4"
+              />
+            </div>
+            
+            {/* Multiple Formats Option - Inside the social media box */}
+            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+              <Checkbox
+                id="enableMultipleFormats"
+                checked={enableMultipleFormats}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEnableMultipleFormats(e.target.checked)}
+                label="Enable Multiple Formats/Shows"
+                helpText={enableMultipleFormats ? "You'll be able to create and manage different formats after setup." : undefined}
+                helpIcon={
+                  <div className="group relative">
+                    <InfoIcon className="h-4 w-4 text-slate-500 cursor-help" />
+                    <div className="absolute left-full ml-2 w-64 bg-white dark:bg-slate-700 p-2 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
+                      Multiple formats allow you to create different versions of your artist profile (e.g., full band, acoustic duo, solo shows) with their own bookings, playbooks, and setlists.
+                    </div>
+                  </div>
+                }
+              />
             </div>
           </div>
-          
+
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end mt-6">
             <button
               type="submit"
               disabled={isSubmitting || isUploading}
               className={`px-6 py-3 bg-orange-500 text-white rounded-lg font-medium ${
                 (isSubmitting || isUploading) ? 'opacity-70 cursor-not-allowed' : 'hover:bg-orange-600'
-              } transition-colors flex items-center`}
+              } transition-colors flex items-center shadow-sm`}
             >
               {isSubmitting || isUploading ? (
                 <>
