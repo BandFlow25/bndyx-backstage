@@ -41,20 +41,20 @@ export default function Home() {
   // Performance timing helper
   const logPerf = (step: string, startTime: number) => {
     const elapsed = Date.now() - startTime;
-    console.log(`PERF_HOME: ${step} - ${elapsed}ms`);
+    // Performance logging removed
     return elapsed;
   };
 
   // Inspect authentication state and measure performance
   useEffect(() => {
     const startTime = Date.now();
-    console.log('AUTH_FLOW: Home page checking URL for token parameter');
+    // Auth flow logging removed
     
     // First check URL for token parameter (faster)
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('token');
     if (urlToken) {
-      console.log(`AUTH_FLOW: Found token in URL (${logPerf('token_in_url', startTime)}ms)`);      
+      // Auth flow logging removed
       localStorage.setItem('bndyAuthToken', urlToken);
       
       // Clean up URL
@@ -67,7 +67,7 @@ export default function Home() {
       logPerf('after_url_cleanup', startTime);
       
       // Force redirect to dashboard
-      console.log(`AUTH_FLOW: Redirecting to dashboard (${logPerf('before_dashboard_redirect', startTime)}ms)`);
+      // Auth flow logging removed
       router.push('/dashboard');
       return;
     }
@@ -90,7 +90,7 @@ export default function Home() {
         // Log token details (without exposing sensitive parts)
         const tokenStart = token.substring(0, 10);
         const tokenEnd = token.substring(token.length - 10);
-        console.log(`HOME PAGE: Token found: ${tokenStart}...${tokenEnd}`);
+        // Token logging removed
         
         // Import jwtDecode dynamically to inspect token contents
         import('jwt-decode').then(({ jwtDecode }) => {
@@ -98,16 +98,10 @@ export default function Home() {
             const decoded = jwtDecode<BndyJwtPayload>(token);
             
             // Log the complete decoded token for debugging
-            console.log('HOME PAGE: Full decoded token:', decoded);
+            // Token logging removed
             
             // Log specific token details
-            console.log('HOME PAGE: Decoded token details:', {
-              uid: decoded.uid,
-              email: decoded.email,
-              displayName: decoded.displayName || null,
-              roles: decoded.roles || [],
-              exp: new Date(decoded.exp * 1000).toISOString()
-            });
+            // Token details logging removed
             
             // Update debug panel with token information
             if (debugInfoElement) {
@@ -143,7 +137,7 @@ export default function Home() {
             
             // Check if token is expired
             if (decoded.exp * 1000 < Date.now()) {
-              console.log('HOME PAGE: Token is expired, removing from localStorage');
+              // Token expired logging removed
               localStorage.removeItem('bndyAuthToken');
               
               if (debugInfoElement) {
@@ -155,11 +149,11 @@ export default function Home() {
                 }, null, 2);
               }
             } else {
-              console.log('HOME PAGE: Token is valid, user should be authenticated');
-              console.log('HOME PAGE: IMPORTANT - Automatic redirect to dashboard has been disabled for debugging');
+              // Token valid logging removed
+              // Redirect logging removed
             }
           } catch (decodeError) {
-            console.error('HOME PAGE: Error decoding token:', decodeError);
+            // Error handling silenced
             localStorage.removeItem('bndyAuthToken');
             
             if (debugInfoElement) {

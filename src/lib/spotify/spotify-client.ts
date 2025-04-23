@@ -56,7 +56,7 @@ export const getTrackMetadata = async (trackId: string) => {
     
     return metadataCache[trackId];
   } catch (error) {
-    console.error('Error fetching track metadata from Spotify:', error);
+    // Error handling silenced
     throw error;
   }
 };
@@ -73,7 +73,7 @@ export const createPlaylist = async (userId: string, name: string, description: 
     });
     return response;
   } catch (error) {
-    console.error('Error creating Spotify playlist:', error);
+    // Error handling silenced
     throw error;
   }
 };
@@ -86,7 +86,7 @@ export const addTracksToPlaylist = async (playlistId: string, trackUris: string[
     const response = await spotifyApi.addTracksToPlaylist(playlistId, trackUris);
     return response;
   } catch (error) {
-    console.error('Error adding tracks to Spotify playlist:', error);
+    // Error handling silenced
     throw error;
   }
 };
@@ -99,7 +99,7 @@ export const getUserPlaylists = async () => {
     const response = await spotifyApi.getUserPlaylists();
     return response;
   } catch (error) {
-    console.error('Error fetching user playlists:', error);
+    // Error handling silenced
     throw error;
   }
 };
@@ -112,7 +112,7 @@ export const getPlaylistTracks = async (playlistId: string) => {
     const response = await spotifyApi.getPlaylistTracks(playlistId);
     return response;
   } catch (error) {
-    console.error('Error fetching playlist tracks:', error);
+    // Error handling silenced
     throw error;
   }
 };
@@ -125,7 +125,7 @@ export const searchTracks = async (query: string, limit: number = 10) => {
     const response = await spotifyApi.searchTracks(query, { limit });
     return response;
   } catch (error) {
-    console.error('Error searching Spotify tracks:', error);
+    // Error handling silenced
     throw error;
   }
 };

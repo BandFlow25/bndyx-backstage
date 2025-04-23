@@ -139,7 +139,7 @@ export class ArtistService {
   static async getArtistsByUserId(userId: string): Promise<Artist[]> {
     // Enable targeted debug logging
     const logDebug = (message: string, ...args: any[]) => {
-      console.log(`ARTIST_SERVICE: ${message}`, ...args);
+      // Artist service logging removed
     };
     
     const startTime = Date.now();

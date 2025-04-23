@@ -2,7 +2,7 @@
 // Collection names for Firestore
 
 export const COLLECTIONS = {
-  USERS: 'users',
+  USERS: 'bf_users',
   ARTISTS: 'bndy_artists',
   EVENTS: 'events',
   SONGS: 'songs',

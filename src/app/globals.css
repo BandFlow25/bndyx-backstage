@@ -1,19 +1,86 @@
 @import "tailwindcss";
 
+/* Light Mode (default) */
 :root {
+  /* Base colors */
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Brand colors */
   --bndy-orange: #f97316;
   --bndy-orange-hover: #ea580c;
-  --bndy-dark-blue: #1e293b;
-  --bndy-darker-blue: #0f172a;
-  --bndy-light-gray: #f1f5f9;
-  --bndy-text-white: #f8fafc;
-  --bndy-text-gray: #94a3b8;
+  --bndy-cyan: #06b6d4;
+  --bndy-cyan-hover: #0891b2;
+  
+  /* UI element colors */
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --sidebar-bg: #ffffff;
+  --header-bg: #ffffff;
+  --input-bg: #ffffff;
+  --input-border: #e2e8f0;
+  
+  /* Text colors */
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --text-white: #f8fafc;
+  
+  /* Slate palette */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  
+  /* Status colors */
+  --success: #22c55e;
+  --warning: #eab308;
+  --error: #ef4444;
+  --info: #3b82f6;
 }
 
+/* Dark Mode Overrides */
+.dark {
+  /* Base colors */
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  
+  /* UI element colors */
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --sidebar-bg: #0f172a;
+  --header-bg: #0f172a;
+  --input-bg: #1e293b;
+  --input-border: #334155;
+  
+  /* Text colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  
+  /* Slate palette - dark mode */
+  --slate-50: #0f172a;
+  --slate-100: #1e293b;
+  --slate-200: #334155;
+  --slate-300: #475569;
+  --slate-400: #64748b;
+  --slate-500: #94a3b8;
+  --slate-600: #cbd5e1;
+  --slate-700: #e2e8f0;
+  --slate-800: #f1f5f9;
+  --slate-900: #f8fafc;
+}
+
+/* Base styles */
 body {
   background: var(--background);
   color: var(--foreground);
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }

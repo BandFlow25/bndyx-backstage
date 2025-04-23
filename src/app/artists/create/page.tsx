@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from 'bndy-ui/components/auth';
 import { useArtist } from '@/lib/context/artist-context';
+import { useTheme } from '@/lib/context/theme-context';
 import { ArtistService } from '@/lib/services/artist-service';
 import { CreateArtistData, Artist, MusicGenre, ArtistMember } from 'bndy-types';
 import { validateSocialMediaUrl } from '@/lib/utils/social-media-utils';
@@ -21,6 +22,7 @@ import { BndyLoadingScreen } from 'bndy-ui';
 const CreateArtistPage = () => {
   const { currentUser } = useAuth();
   const { refreshArtists } = useArtist();
+  const { isDarkMode } = useTheme();
   const router = useRouter();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const headerInputRef = useRef<HTMLInputElement>(null);
@@ -235,28 +237,28 @@ const CreateArtistPage = () => {
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
-          <h1 className="text-3xl font-bold text-white">Create New Artist</h1>
+        <div className="flex justify-between items-center mb-8 border-b border-slate-700 dark:border-slate-800 pb-4">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Create New Artist</h1>
           <Link 
             href="/artists" 
-            className="text-slate-300 hover:text-white"
+            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             Back to Artists
           </Link>
         </div>
 
         {error && (
-          <div className="bg-red-900/20 border border-red-900 text-red-200 p-4 rounded-lg mb-6">
+          <div className="bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-900 text-red-800 dark:text-red-200 p-4 rounded-lg mb-6 transition-colors duration-300">
             <p>{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-700">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-200 dark:border-slate-700 transition-colors duration-300">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Left column */}
             <div>
               <div className="mb-6">
-                <label htmlFor="name" className="block text-white font-medium mb-2">
+                <label htmlFor="name" className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
                   Artist/Band Name*
                 </label>
                 <div className="relative">
@@ -266,7 +268,7 @@ const CreateArtistPage = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     onBlur={checkNameAvailability}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
                     required
                     maxLength={50}
                   />
@@ -287,24 +289,24 @@ const CreateArtistPage = () => {
                   )}
                 </div>
                 {nameAvailable === false && !isCheckingName && (
-                  <p className="text-orange-400 text-sm mt-1">
+                  <p className="text-orange-600 dark:text-orange-400 text-sm mt-1 transition-colors duration-300">
                     This name is already taken. We'll suggest an alternative when you create the artist.
                   </p>
                 )}
               </div>
 
               <div className="mb-6">
-                <label htmlFor="hometown" className="block text-white font-medium mb-2">
+                <label htmlFor="hometown" className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
                   Hometown*
                 </label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                  <MapPin className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
                   <input
                     type="text"
                     id="hometown"
                     value={hometown}
                     onChange={(e) => setHometown(e.target.value)}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
                     required
                     maxLength={50}
                   />
@@ -312,14 +314,14 @@ const CreateArtistPage = () => {
               </div>
 
               <div className="mb-6">
-                <label htmlFor="description" className="block text-white font-medium mb-2">
-                  Description* <span className="text-slate-400 text-sm">({description.length}/120)</span>
+                <label htmlFor="description" className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
+                  Description* <span className="text-slate-500 dark:text-slate-400 text-sm transition-colors duration-300">({description.length}/120)</span>
                 </label>
                 <textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
                   required
                   maxLength={120}
                   rows={3}
@@ -327,19 +329,19 @@ const CreateArtistPage = () => {
               </div>
 
               <div className="mb-6">
-                <label className="block text-white font-medium mb-2">
-                  Genres* <span className="text-slate-400 text-sm">(Select at least one)</span>
+                <label className="block text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">
+                  Genres* <span className="text-slate-500 dark:text-white text-sm transition-colors duration-300">(Select at least one)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABLE_GENRES.map((genre) => (
                     <button
-                      key={genre}
+                      key={genre} //
                       type="button"
                       onClick={() => toggleGenre(genre)}
-                      className={`px-3 py-1 rounded-full text-sm ${
+                      className={`px-3 py-1 rounded-full text-sm font-semibold genre-button ${
                         selectedGenres.includes(genre)
                           ? 'bg-orange-500 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          : 'bg-slate-200 dark:bg-slate-600 text-slate-800 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors duration-300'
                       }`}
                     >
                       {genre}
@@ -352,7 +354,7 @@ const CreateArtistPage = () => {
             {/* Right column */}
             <div>
               <div className="mb-6">
-                <label className="block text-white font-medium mb-2">
+                <label className="block text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">
                   Profile Images
                 </label>
                 
@@ -360,7 +362,7 @@ const CreateArtistPage = () => {
                   {/* Avatar upload */}
                   <div>
                     <div 
-                      className="bg-slate-700 border border-slate-600 rounded-lg p-4 text-center cursor-pointer hover:bg-slate-600 transition-colors"
+                      className="bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg p-4 text-center cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors duration-300"
                       onClick={() => avatarInputRef.current?.click()}
                     >
                       {avatarPreview ? (
@@ -372,11 +374,13 @@ const CreateArtistPage = () => {
                           />
                         </div>
                       ) : (
-                        <div className="w-32 h-32 mx-auto rounded-full bg-slate-800 flex items-center justify-center">
-                          <Upload className="h-10 w-10 text-slate-400" />
+                        <div className="w-32 h-32 mx-auto rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center transition-colors duration-300">
+                          <div className="w-16 h-16 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center">
+                            <Upload className="h-8 w-8 text-slate-600 dark:text-white" />
+                          </div>
                         </div>
                       )}
-                      <p className="mt-2 text-slate-300 text-sm">Avatar Image</p>
+                      <p className="mt-2 text-slate-700 text-sm font-semibold transition-colors duration-300 upload-label">Avatar Image</p>
                     </div>
                     <input
                       type="file"
@@ -390,7 +394,7 @@ const CreateArtistPage = () => {
                   {/* Header upload */}
                   <div>
                     <div 
-                      className="bg-slate-700 border border-slate-600 rounded-lg p-4 text-center cursor-pointer hover:bg-slate-600 transition-colors"
+                      className="bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg p-4 text-center cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors duration-300"
                       onClick={() => headerInputRef.current?.click()}
                     >
                       {headerPreview ? (
@@ -402,11 +406,13 @@ const CreateArtistPage = () => {
                           />
                         </div>
                       ) : (
-                        <div className="w-full h-32 mx-auto rounded-lg bg-slate-800 flex items-center justify-center">
-                          <Upload className="h-10 w-10 text-slate-400" />
+                        <div className="w-full h-32 mx-auto rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center transition-colors duration-300">
+                          <div className="w-16 h-16 rounded-lg bg-slate-300 dark:bg-slate-600 flex items-center justify-center">
+                            <Upload className="h-8 w-8 text-slate-600 dark:text-white" />
+                          </div>
                         </div>
                       )}
-                      <p className="mt-2 text-slate-300 text-sm">Header Image</p>
+                      <p className="mt-2 text-slate-700 text-sm font-semibold transition-colors duration-300 upload-label">Header Image</p>
                     </div>
                     <input
                       type="file"
@@ -420,27 +426,24 @@ const CreateArtistPage = () => {
               </div>
 
               <div className="mb-6">
-                <label className="block text-white font-medium mb-2">
+                <label className="block text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">
                   Social Media Links
                 </label>
                 
                 <div className="space-y-3">
                   {/* Instagram */}
                   <div className="relative">
-                    <Instagram className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                    <Instagram className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
                     <input
                       type="url"
                       placeholder="Instagram URL"
                       value={instagram}
-                      onChange={(e) => setInstagram(e.target.value)}
-                      onBlur={() => {
-                        if (instagram && !validateSocialMediaUrl(instagram, 'instagram')) {
-                          setInstagramError('Please enter a valid Instagram URL');
-                        } else {
-                          setInstagramError(null);
-                        }
+                      onChange={(e) => {
+                        setInstagram(e.target.value);
+                        const isValid = validateSocialMediaUrl(e.target.value, 'instagram');
+                        setInstagramError(e.target.value && !isValid ? 'Please enter a valid Instagram URL' : null);
                       }}
-                      className={`w-full bg-slate-700 border ${instagramError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
                     />
                     {instagramError && (
                       <p className="text-red-500 text-xs mt-1">{instagramError}</p>
@@ -449,20 +452,17 @@ const CreateArtistPage = () => {
                   
                   {/* Facebook */}
                   <div className="relative">
-                    <Facebook className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                    <Facebook className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
                     <input
                       type="url"
                       placeholder="Facebook URL"
                       value={facebook}
-                      onChange={(e) => setFacebook(e.target.value)}
-                      onBlur={() => {
-                        if (facebook && !validateSocialMediaUrl(facebook, 'facebook')) {
-                          setFacebookError('Please enter a valid Facebook URL');
-                        } else {
-                          setFacebookError(null);
-                        }
+                      onChange={(e) => {
+                        setFacebook(e.target.value);
+                        const isValid = validateSocialMediaUrl(e.target.value, 'facebook');
+                        setFacebookError(e.target.value && !isValid ? 'Please enter a valid Facebook URL' : null);
                       }}
-                      className={`w-full bg-slate-700 border ${facebookError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
                     />
                     {facebookError && (
                       <p className="text-red-500 text-xs mt-1">{facebookError}</p>
@@ -471,20 +471,17 @@ const CreateArtistPage = () => {
                   
                   {/* Spotify */}
                   <div className="relative">
-                    <Music className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                    <Music className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
                     <input
                       type="url"
                       placeholder="Spotify URL"
                       value={spotify}
-                      onChange={(e) => setSpotify(e.target.value)}
-                      onBlur={() => {
-                        if (spotify && !validateSocialMediaUrl(spotify, 'spotify')) {
-                          setSpotifyError('Please enter a valid Spotify URL');
-                        } else {
-                          setSpotifyError(null);
-                        }
+                      onChange={(e) => {
+                        setSpotify(e.target.value);
+                        const isValid = validateSocialMediaUrl(e.target.value, 'spotify');
+                        setSpotifyError(e.target.value && !isValid ? 'Please enter a valid Spotify URL' : null);
                       }}
-                      className={`w-full bg-slate-700 border ${spotifyError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
                     />
                     {spotifyError && (
                       <p className="text-red-500 text-xs mt-1">{spotifyError}</p>
@@ -493,20 +490,17 @@ const CreateArtistPage = () => {
                   
                   {/* Twitter */}
                   <div className="relative">
-                    <Twitter className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                    <Twitter className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
                     <input
                       type="url"
                       placeholder="Twitter URL"
                       value={twitter}
-                      onChange={(e) => setTwitter(e.target.value)}
-                      onBlur={() => {
-                        if (twitter && !validateSocialMediaUrl(twitter, 'twitter')) {
-                          setTwitterError('Please enter a valid Twitter URL');
-                        } else {
-                          setTwitterError(null);
-                        }
+                      onChange={(e) => {
+                        setTwitter(e.target.value);
+                        const isValid = validateSocialMediaUrl(e.target.value, 'twitter');
+                        setTwitterError(e.target.value && !isValid ? 'Please enter a valid Twitter URL' : null);
                       }}
-                      className={`w-full bg-slate-700 border ${twitterError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
                     />
                     {twitterError && (
                       <p className="text-red-500 text-xs mt-1">{twitterError}</p>
@@ -515,20 +509,17 @@ const CreateArtistPage = () => {
                   
                   {/* YouTube */}
                   <div className="relative">
-                    <Youtube className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                    <Youtube className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
                     <input
                       type="url"
                       placeholder="YouTube URL"
                       value={youtube}
-                      onChange={(e) => setYoutube(e.target.value)}
-                      onBlur={() => {
-                        if (youtube && !validateSocialMediaUrl(youtube, 'youtube')) {
-                          setYoutubeError('Please enter a valid YouTube URL');
-                        } else {
-                          setYoutubeError(null);
-                        }
+                      onChange={(e) => {
+                        setYoutube(e.target.value);
+                        const isValid = validateSocialMediaUrl(e.target.value, 'youtube');
+                        setYoutubeError(e.target.value && !isValid ? 'Please enter a valid YouTube URL' : null);
                       }}
-                      className={`w-full bg-slate-700 border ${youtubeError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
                     />
                     {youtubeError && (
                       <p className="text-red-500 text-xs mt-1">{youtubeError}</p>
@@ -537,20 +528,17 @@ const CreateArtistPage = () => {
                   
                   {/* Website */}
                   <div className="relative">
-                    <LinkIcon className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                    <LinkIcon className="absolute left-3 top-2.5 text-slate-500 dark:text-slate-400 transition-colors duration-300" size={18} />
                     <input
                       type="url"
                       placeholder="Website URL"
                       value={website}
-                      onChange={(e) => setWebsite(e.target.value)}
-                      onBlur={() => {
-                        if (website && !validateSocialMediaUrl(website, 'website')) {
-                          setWebsiteError('Please enter a valid website URL');
-                        } else {
-                          setWebsiteError(null);
-                        }
+                      onChange={(e) => {
+                        setWebsite(e.target.value);
+                        const isValid = validateSocialMediaUrl(e.target.value, 'website');
+                        setWebsiteError(e.target.value && !isValid ? 'Please enter a valid website URL' : null);
                       }}
-                      className={`w-full bg-slate-700 border ${websiteError ? 'border-red-500' : 'border-slate-600'} rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent`}
+                      className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg pl-10 pr-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
                     />
                     {websiteError && (
                       <p className="text-red-500 text-xs mt-1">{websiteError}</p>
@@ -561,19 +549,18 @@ const CreateArtistPage = () => {
             </div>
           </div>
 
-          <div className="mt-8 flex justify-end">
-            <Link
-              href="/artists"
-              className="px-6 py-2 rounded-lg bg-slate-700 text-white mr-4 hover:bg-slate-600 transition-colors"
+          <div className="flex justify-end gap-4 mt-8">
+            <button
+              type="button"
+              onClick={() => router.push('/artists')}
+              className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors duration-300"
             >
               Cancel
-            </Link>
+            </button>
             <button
               type="submit"
               disabled={loading}
-              className={`px-6 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors flex items-center ${
-                loading ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center"
             >
               {loading ? (
                 <>

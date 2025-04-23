@@ -27,18 +27,13 @@ export const initializeFirebase = () => {
       appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     };
     
-    console.log('Initializing Firebase client for bndy-core with config:', {
-      projectId: firebaseConfig.projectId,
-      authDomain: firebaseConfig.authDomain,
-      hasApiKey: !!firebaseConfig.apiKey,
-      hasAppId: !!firebaseConfig.appId
-    });
+    // Firebase initialization with environment variables
     
     try {
       firebaseApp = initializeApp(firebaseConfig);
-      console.log('Firebase initialization successful');
+      // Firebase initialization successful
     } catch (error) {
-      console.error('Firebase initialization failed:', error);
+      // Error handling silenced
       throw error;
     }
   } else {

@@ -54,7 +54,7 @@ export const ArtistProvider = ({ children }: { children: ReactNode }) => {
 
   // Add targeted debug logging
   const logArtist = (message: string, ...args: any[]) => {
-    console.log(`ARTIST_FLOW: ${message}`, ...args);
+    // Artist flow logging removed
   };
 
   // Load currentUser's artists when authenticated
@@ -152,7 +152,7 @@ export const ArtistProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Artist not found');
       }
     } catch (err) {
-      console.error('Error setting current artist:', err);
+      // Error handling silenced
       setArtistError('Failed to set current artist');
     } finally {
       setArtistLoading(false);

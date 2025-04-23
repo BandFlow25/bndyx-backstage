@@ -25,8 +25,8 @@ const ArtistSelectionPage = () => {
   return (
     <MainLayout>
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
-          <h1 className="text-3xl font-bold text-white">My Artists</h1>
+        <div className="flex justify-between items-center mb-8 border-b border-slate-200 dark:border-slate-800 pb-4 transition-colors duration-300">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors duration-300">My Artists</h1>
           <Link 
             href="/artists/create" 
             className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg text-center transition-colors font-medium shadow-md flex items-center"
@@ -41,16 +41,16 @@ const ArtistSelectionPage = () => {
             <BndySpinner />
           </div>
         ) : artistError ? (
-          <div className="bg-red-900/20 border border-red-900 text-red-200 p-4 rounded-lg">
+          <div className="bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-900 text-red-800 dark:text-red-200 p-4 rounded-lg transition-colors duration-300">
             <p>{artistError}</p>
           </div>
         ) : currentUserArtists.length === 0 ? (
-          <div className="bg-slate-800 rounded-lg p-8 text-center">
-            <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-8 text-center transition-colors duration-300 border border-slate-200 dark:border-slate-700">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
               <Music className="h-8 w-8 text-orange-500" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">No Artists Yet</h2>
-            <p className="text-slate-300 mb-6">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 transition-colors duration-300">No Artists Yet</h2>
+            <p className="text-slate-600 dark:text-slate-300 mb-6 transition-colors duration-300">
               You haven't created or joined any artists/bands yet. Create your first artist to get started!
             </p>
             <Link 

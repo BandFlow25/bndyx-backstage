@@ -83,44 +83,42 @@ const Sidebar: React.FC = () => {
   };
   
   return (
-    <div className="h-full w-64 bg-slate-800 dark:bg-slate-900 text-white flex flex-col">
-      <div className="p-4 border-b border-slate-700 dark:border-slate-800">
-        <Link href="/dashboard" className="flex items-center">
-          <BndyLogo className="h-8 w-auto" color="#f97316" holeColor="#ffffff" />
-        </Link>
+    <div className="h-full w-64 bg-white dark:bg-slate-800 text-slate-900 dark:text-white flex flex-col transition-colors duration-300">
+      <div className="p-4 border-b border-slate-200 dark:border-slate-700 transition-colors duration-300">
+        <div className="text-lg font-semibold text-slate-900 dark:text-white transition-colors duration-300">Navigation</div>
       </div>
       <div className="flex-1 overflow-y-auto py-4 px-3">
         {/* Active Artist Selector */}
         {currentUserArtists.length > 0 && (
           <div className="mb-6">
             <div 
-              className="flex items-center justify-between p-2 rounded-md bg-slate-700 dark:bg-slate-800 cursor-pointer hover:bg-slate-600 dark:hover:bg-slate-700 transition-colors"
+              className="flex items-center justify-between p-2 rounded-md bg-slate-100 dark:bg-slate-700 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-300"
               onClick={() => setArtistSelectorOpen(!artistSelectorOpen)}
             >
               <div className="flex items-center">
                 {currentArtist ? (
                   <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-slate-600 dark:bg-slate-700 flex items-center justify-center mr-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center mr-2 transition-colors duration-300">
                       <Music className="h-4 w-4 text-orange-500" />
                     </div>
-                    <div className="text-sm font-medium text-white">
+                    <div className="text-sm font-medium text-slate-900 dark:text-white transition-colors duration-300">
                       {currentArtist ? currentArtist.name : 'Select Artist'}
                     </div>
                   </div>
                 ) : (
-                  <span className="text-orange-400 font-medium">Select Artist</span>
+                  <span className="text-orange-500 dark:text-orange-400 font-medium transition-colors duration-300">Select Artist</span>
                 )}
               </div>
-              {artistSelectorOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {artistSelectorOpen ? <ChevronUp size={16} className="text-slate-500 dark:text-slate-300" /> : <ChevronDown size={16} className="text-slate-500 dark:text-slate-300" />}
             </div>
             
             {/* Artist Dropdown */}
             {artistSelectorOpen && (
-              <div className="mt-2 py-1 bg-slate-700 dark:bg-slate-800 rounded-md shadow-lg">
+              <div className="mt-2 py-1 bg-white dark:bg-slate-700 rounded-md shadow-lg border border-slate-200 dark:border-slate-600 transition-colors duration-300">
                 {currentUserArtists.map(artist => (
                   <div 
                     key={artist.id}
-                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-600 dark:hover:bg-slate-700 ${currentArtist?.id === artist.id ? 'bg-slate-600 dark:bg-slate-700' : ''}`}
+                    className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors duration-300 ${currentArtist?.id === artist.id ? 'bg-slate-200 dark:bg-slate-600' : ''}`}
                     onClick={() => handleSelectArtist(artist.id)}
                   >
                     {artist.avatarUrl ? (
@@ -134,7 +132,7 @@ const Sidebar: React.FC = () => {
                         <span className="text-white text-xs font-medium">{artist.name.charAt(0)}</span>
                       </div>
                     )}
-                    <span className="truncate">{artist.name}</span>
+                    <span className="truncate text-slate-900 dark:text-white transition-colors duration-300">{artist.name}</span>
                     {currentArtist?.id === artist.id && (
                       <span className="ml-auto w-2 h-2 rounded-full bg-orange-500"></span>
                     )}
@@ -143,7 +141,7 @@ const Sidebar: React.FC = () => {
                 
                 {currentArtist && (
                   <div 
-                    className="px-3 py-2 text-sm cursor-pointer hover:bg-slate-600 dark:hover:bg-slate-700 text-slate-400 hover:text-white flex items-center"
+                    className="px-3 py-2 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center transition-colors duration-300 border-t border-slate-200 dark:border-slate-600"
                     onClick={handleClearArtist}
                   >
                     <LogOut size={16} className="mr-2" />
@@ -165,12 +163,12 @@ const Sidebar: React.FC = () => {
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className={`flex items-center px-3 py-2 rounded-md ${isActive ? 'bg-slate-700 dark:bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-700 dark:hover:bg-slate-800 hover:text-white'}`}
+                    className={`flex items-center px-3 py-2 rounded-md transition-colors duration-300 ${isActive ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
                   >
                     <span className="mr-3">{item.icon}</span>
                     <span className="font-medium text-sm md:text-base">{item.label}</span>
                     {isActive && (
-                      <span className="ml-auto w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-white"></span>
+                      <span className="ml-auto w-1.5 md:w-2 h-1.5 md:h-2 rounded-full bg-orange-500"></span>
                     )}
                   </Link>
                 </li>
@@ -181,18 +179,18 @@ const Sidebar: React.FC = () => {
       </div>
       
       <div className="mt-auto pt-6">
-        <div className="p-4 border-t border-slate-700 dark:border-slate-800">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 transition-colors duration-300">
           <div className="flex flex-col space-y-2">
-            <div className="text-xs text-slate-400 dark:text-slate-500">
+            <div className="text-xs text-slate-500 dark:text-slate-400 transition-colors duration-300">
               &copy; {new Date().getFullYear()} bndy
             </div>
-            <div className="text-xs font-medium">
+            <div className="text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors duration-300">
               Keeping <span className="text-cyan-500">LIVE</span> music <span className="text-orange-500">ALIVE</span>
             </div>
             
             <button 
               onClick={handleSignOut}
-              className="mt-2 w-full flex items-center justify-center px-4 py-2 bg-slate-700 dark:bg-slate-800 hover:bg-slate-600 dark:hover:bg-slate-700 rounded-md transition-colors text-sm"
+              className="mt-2 w-full flex items-center justify-center px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-white rounded-md transition-colors duration-300 text-sm"
             >
               <LogOut size={16} className="mr-2" />
               Sign Out

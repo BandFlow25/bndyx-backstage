@@ -8,7 +8,7 @@ import { getFirebaseAuth } from '../firebase';
 const DEBUG = true;
 const logAuth = (message: string, ...args: any[]) => {
   if (DEBUG) {
-    console.log(`AUTH_FLOW: ${message}`, ...args);
+    // Auth flow logging removed
   }
 };
 
@@ -37,6 +37,8 @@ interface UserProfile {
   photoURL: string | null;
   roles: UserRole[];
   godMode?: boolean; // Add godMode flag to user profile
+  updatedAt?: Date; // Timestamp for when the profile was last updated
+  createdAt?: Date; // Timestamp for when the profile was created
 }
 
 // Define auth state shape
@@ -133,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const processToken = async (tokenToProcess: string): Promise<boolean> => {
     const startTime = Date.now();
     const perfMark = (stage: string) => {
-      console.log(`AUTH_PERF: ${stage} - ${Date.now() - startTime}ms`);
+      // Auth performance logging removed
     };
     
     logAuth(`Processing token (start)`);
@@ -250,7 +252,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const startTime = Date.now();
       logAuth('Authentication initialization started');
       const perf = (step: string) => {
-        console.log(`AUTH_PERF: ${step} - ${Date.now() - startTime}ms`);
+        // Auth performance logging removed
       };
       
       perf('init_start');

@@ -6,7 +6,7 @@ import Header from './Header';
 import ThinFooter from './ThinFooter';
 import Sidebar from './Sidebar';
 import { useAuth } from 'bndy-ui/components/auth';
-console.log('[BNDY-CORE MainLayout] Imported useAuth from local context:', useAuth);
+// Auth context import logging removed
 import BndyLogo from '../logo/bndylogo';
 import { BndyLoadingScreen } from 'bndy-ui';
 import { Menu, X } from 'lucide-react';
@@ -27,7 +27,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   // Add targeted debug logging
   const logFlow = (message: string, ...args: any[]) => {
-    console.log(`AUTH_FLOW: ${message}`, ...args);
+    // Auth flow logging removed
   };
   
   // Monitor authentication state with improved safety mechanisms
@@ -116,7 +116,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     const token = localStorage.getItem('bndyAuthToken');
     
     return (
-      <div className="min-h-screen bg-slate-900 flex flex-col">
+      <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col text-slate-900 dark:text-white transition-colors duration-300">
         <Header />
         {token && (
           <div className="mx-auto max-w-md w-full mt-4 p-4 bg-yellow-800 rounded-lg text-white">
@@ -141,18 +141,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </div>
         )}
         <div className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-md w-full text-center bg-slate-800 p-8 rounded-lg shadow-xl">
+          <div className="max-w-md w-full text-center bg-white dark:bg-slate-800 p-8 rounded-lg shadow-xl transition-colors duration-300">
             <div className="mb-6">
               <BndyLogo className="h-16 w-auto mx-auto" />
-              <h2 className="text-2xl font-bold text-white mt-4">Artist, Venue and Studio Management Platform</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mt-4">Artist, Venue and Studio Management Platform</h2>
             </div>
-            <p className="text-slate-300 mb-8 text-lg">Please log in to access the platform for bands, artists, and venues.</p>
+            <p className="text-slate-600 dark:text-slate-300 mb-8 text-lg">Please log in to access the platform for bands, artists, and venues.</p>
             <a 
               href="https://localhost:3001/login?returnTo=http%3A%2F%2Flocalhost%3A3002%2Fdashboard"
               target="_self"
               className="inline-block bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg transition-colors font-medium text-lg shadow-md"
               onClick={() => {
-                console.log('MAIN LAYOUT: Login button clicked, redirecting to auth service');
+                // Login button clicked, redirecting to auth service
               }}
             >
               Log In
@@ -166,7 +166,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   // Main layout with sidebar for authenticated currentUser
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col text-slate-900 dark:text-white transition-colors duration-300">
       <Header toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
       <div className="flex flex-1 relative">
         

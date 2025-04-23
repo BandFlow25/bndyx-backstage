@@ -1,20 +1,26 @@
-/* app/theme.css */
-:root {
-  --bndy-orange: #f97316;
-  --bndy-orange-hover: #ea580c;
-  --bndy-text-light: #1e293b;
-  --bndy-text-dark: #f8fafc;
-  --bndy-bg-light: #ffffff;
-  --bndy-bg-dark: #0f172a;
-  --bndy-border-light: #e2e8f0;
-  --bndy-border-dark: #334155;
-  --bndy-card-light: #f8fafc;
-  --bndy-card-dark: #1e293b;
-}
+/* app/theme.css - Enhanced theme support */
 
-/* Dark mode styles */
+/* Ensure dark mode is properly applied */
 .dark {
   color-scheme: dark;
+}
+
+/* Force immediate theme application without transitions */
+.theme-transition-disabled * {
+  transition: none !important;
+}
+
+/* Only enable transitions after the page is fully loaded */
+html.js-loaded * {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 300ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Add a script to mark the html as loaded */
+html::after {
+  content: '';
+  display: none;
 }
 
 /* Basic button styles */
@@ -36,60 +42,94 @@
 
 /* Theme-aware component styles */
 .card {
-  background-color: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 0.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.dark .card {
-  background-color: #1e293b;
-  border-color: #334155;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .input {
-  background-color: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--foreground);
   border-radius: 0.375rem;
   padding: 0.5rem 0.75rem;
-  color: #1e293b;
-}
-
-.dark .input {
-  background-color: #1e293b;
-  border-color: #475569;
-  color: white;
+  font-size: 0.875rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .select {
-  background-color: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--foreground);
   border-radius: 0.375rem;
   padding: 0.5rem 0.75rem;
-  color: #1e293b;
+  font-size: 0.875rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-.dark .select {
-  background-color: #1e293b;
-  border-color: #475569;
-  color: white;
+/* Override for specific components */
+.bg-white {
+  background-color: var(--background) !important;
 }
 
-/* Ensure text is readable in both light and dark modes */
-.text-primary {
-  color: #1e293b;
+.dark .bg-white {
+  background-color: var(--background) !important;
 }
 
-.dark .text-primary {
-  color: white;
+.text-slate-900 {
+  color: var(--text-primary) !important;
 }
 
-.text-secondary {
-  color: #64748b;
+.dark .text-slate-900 {
+  color: var(--text-primary) !important;
 }
 
-.dark .text-secondary {
-  color: #cbd5e1;
+/* Force dark mode colors */
+.dark .bg-slate-100 {
+  background-color: var(--slate-100) !important;
+}
+
+.dark .bg-slate-200 {
+  background-color: var(--slate-200) !important;
+}
+
+.dark .bg-slate-800 {
+  background-color: var(--slate-800) !important;
+}
+
+.dark .bg-slate-900 {
+  background-color: var(--slate-900) !important;
+}
+
+.dark .text-white {
+  color: var(--text-white) !important;
+}
+
+.dark .border-slate-200 {
+  border-color: var(--slate-200) !important;
+}
+
+.dark .border-slate-700 {
+  border-color: var(--slate-700) !important;
+}
+
+.dark .border-slate-800 {
+  border-color: var(--slate-800) !important;
+}
+
+/* High contrast fixes for dark mode */
+.dark .genre-button {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+  font-weight: 600 !important;
+}
+
+.dark .upload-label {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+  font-weight: 600 !important;
 }
 
 .text-muted {

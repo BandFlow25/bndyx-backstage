@@ -3,10 +3,10 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import './theme.css';
 
-// Import AuthProvider from bndy-ui
+// Import components
 import { AuthProvider } from 'bndy-ui/components/auth';
-// Import ArtistProvider
 import { ArtistProvider } from '@/lib/context/artist-context';
+import { ThemeProvider } from '@/lib/context/theme-context';
 // Initialize Firebase
 import { initializeFirebase } from '@/lib/firebase';
 
@@ -32,10 +32,15 @@ export default function RootLayout({
   
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased bg-slate-900 text-white`}>
+      <head>
+        {/* No inline scripts to avoid hydration mismatches */}
+      </head>
+      <body className={`${inter.variable} antialiased`}>
         <AuthProvider>
           <ArtistProvider>
-            {children}
+            <ThemeProvider>
+              {children}
+            </ThemeProvider>
           </ArtistProvider>
         </AuthProvider>
       </body>

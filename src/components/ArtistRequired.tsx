@@ -20,7 +20,7 @@ const ArtistRequired: React.FC<ArtistRequiredProps> = ({ children }) => {
   useEffect(() => {
     // Only redirect after loading completes and we're sure there's no active artist
     if (!artistLoading && !hasActiveArtist) {
-      console.log('No active artist selected, redirecting to dashboard');
+      // No active artist selected, redirecting to dashboard
       
       // If user has artists but none selected, redirect to dashboard to select one
       if (currentUserArtists.length > 0) {
