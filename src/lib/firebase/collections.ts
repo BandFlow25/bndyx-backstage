@@ -4,7 +4,8 @@
 export const COLLECTIONS = {
   USERS: 'bf_users',
   ARTISTS: 'bndy_artists',
-  EVENTS: 'events',
+  EVENTS: 'bndy_events',
+  VENUES: 'bndy_venues',
   SONGS: 'songs',
   SETLISTS: 'setlists',
 } as const;

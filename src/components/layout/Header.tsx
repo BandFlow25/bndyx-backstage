@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from 'bndy-ui/components/auth';
 import { useArtist } from '@/lib/context/artist-context';
 import { useTheme } from '@/lib/context/theme-context';
@@ -11,6 +11,7 @@ import { ShieldCheck, User, LogOut, ChevronDown, Menu, X, Sun, Moon } from 'luci
 
 const Header: React.FC<{ toggleSidebar?: () => void, sidebarOpen?: boolean }> = ({ toggleSidebar, sidebarOpen }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const { currentUser, isLoading, signOut } = useAuth();
   const { currentArtist, currentUserArtists, setCurrentArtistById, clearCurrentArtist } = useArtist();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -56,7 +57,7 @@ const Header: React.FC<{ toggleSidebar?: () => void, sidebarOpen?: boolean }> = 
 
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo with dashboard link */}
           <div className="flex items-center">
@@ -70,77 +71,10 @@ const Header: React.FC<{ toggleSidebar?: () => void, sidebarOpen?: boolean }> = 
           </div>
 
           <div className="flex items-center">
-
-              
-            {/* Artist Selector Dropdown - Only visible if user has artists */}
-            {currentUserArtists.length > 0 && (
-              <div className="relative ml-4">
-                <button 
-                  onClick={() => setArtistDropdownOpen(!artistDropdownOpen)}
-                  className="flex items-center px-3 py-2 rounded-md text-sm font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
-                >
-                  {currentArtist ? (
-                    <>
-                      {currentArtist.name}
-                      <ChevronDown size={16} className="ml-1" />
-                    </>
-                  ) : (
-                    <>
-                      Select Artist
-                      <ChevronDown size={16} className="ml-1" />
-                    </>
-                  )}
-                </button>
-
-                {/* Artist Dropdown Menu */}
-                {artistDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 z-50">
-                    <div className="py-1" role="menu" aria-orientation="vertical">
-                      <div className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-                        Select Artist/Band
-                      </div>
-                      
-                      {currentUserArtists.map(artist => (
-                        <button
-                          key={artist.id}
-                          onClick={() => handleSelectArtist(artist.id)}
-                          className={`w-full text-left px-4 py-2 text-sm ${currentArtist?.id === artist.id 
-                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300' 
-                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
-                          role="menuitem"
-                        >
-                          <div className="flex items-center">
-                            {artist.avatarUrl ? (
-                              <img 
-                                src={artist.avatarUrl} 
-                                alt={artist.name} 
-                                className="h-6 w-6 rounded-full mr-2 object-cover"
-                              />
-                            ) : (
-                              <div className="h-6 w-6 rounded-full bg-orange-500 flex items-center justify-center mr-2">
-                                <span className="text-white text-xs font-medium">{artist.name.charAt(0)}</span>
-                              </div>
-                            )}
-                            <span>{artist.name}</span>
-                          </div>
-                        </button>
-                      ))}
-                      
-                      {currentArtist && (
-                        <button
-                          onClick={handleClearArtist}
-                          className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border-t border-slate-200 dark:border-slate-700"
-                          role="menuitem"
-                        >
-                          <div className="flex items-center text-slate-500 dark:text-slate-400">
-                            <LogOut size={14} className="mr-2" />
-                            <span>Clear Selection</span>
-                          </div>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
+            {/* Display current artist context if in artist backstage */}
+            {currentArtist && pathname?.includes(`/artists/${currentArtist.id}`) && (
+              <div className="ml-4 text-orange-500 font-medium">
+                {currentArtist.name}
               </div>
             )}
               

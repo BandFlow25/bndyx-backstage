@@ -6,6 +6,7 @@ import './theme.css';
 // Import components
 import { AuthProvider } from 'bndy-ui/components/auth';
 import { ArtistProvider } from '@/lib/context/artist-context';
+import { CalendarProvider } from '@/lib/context/calendar-context';
 import { ThemeProvider } from '@/lib/context/theme-context';
 import { GoogleMapsProvider } from 'bndy-ui/components/providers/GoogleMapsProvider';
 // Use explicit type import to resolve type compatibility issues
@@ -41,12 +42,14 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         <AuthProvider>
           <ArtistProvider>
-            <ThemeProvider>
-              {/* The type issue is due to different React versions between packages */}
-              <GoogleMapsProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
-                <>{children}</>
-              </GoogleMapsProvider>
-            </ThemeProvider>
+            <CalendarProvider>
+              <ThemeProvider>
+                {/* The type issue is due to different React versions between packages */}
+                <GoogleMapsProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+                  <>{children}</>
+                </GoogleMapsProvider>
+              </ThemeProvider>
+            </CalendarProvider>
           </ArtistProvider>
         </AuthProvider>
       </body>

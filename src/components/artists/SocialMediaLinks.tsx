@@ -16,12 +16,14 @@ interface SocialMediaLinksProps {
   };
   size?: 'small' | 'medium' | 'large';
   className?: string;
+  disableLinks?: boolean; // When true, renders buttons instead of links to avoid nested <a> tags
 }
 
 export default function SocialMediaLinks({ 
   socialMedia, 
   size = 'medium',
-  className = ''
+  className = '',
+  disableLinks = false
 }: SocialMediaLinksProps) {
   if (!socialMedia) return null;
   
@@ -45,78 +47,76 @@ export default function SocialMediaLinks({
     large: 24
   };
   
+  // Helper function to render either a link or a button with the same appearance
+  const renderSocialItem = (url: string, label: string, icon: React.ReactNode) => {
+    const commonProps = {
+      className: `${sizeClasses[size]} rounded-full bg-slate-700 flex items-center justify-center hover:bg-orange-500 transition-colors`,
+      'aria-label': label
+    };
+
+    if (disableLinks) {
+      return (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering parent link
+            window.open(url, '_blank', 'noopener,noreferrer');
+          }}
+          {...commonProps}
+        >
+          {icon}
+        </button>
+      );
+    }
+
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        {...commonProps}
+      >
+        {icon}
+      </a>
+    );
+  };
+
   return (
     <div className={`flex flex-wrap gap-3 ${className}`}>
-      {instagram && (
-        <a 
-          href={instagram} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className={`${sizeClasses[size]} rounded-full bg-slate-700 flex items-center justify-center hover:bg-orange-500 transition-colors`}
-          aria-label="Instagram"
-        >
-          <Instagram size={iconSize[size]} />
-        </a>
+      {instagram && renderSocialItem(
+        instagram,
+        "Instagram",
+        <Instagram size={iconSize[size]} />
       )}
       
-      {facebook && (
-        <a 
-          href={facebook} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className={`${sizeClasses[size]} rounded-full bg-slate-700 flex items-center justify-center hover:bg-orange-500 transition-colors`}
-          aria-label="Facebook"
-        >
-          <Facebook size={iconSize[size]} />
-        </a>
+      {facebook && renderSocialItem(
+        facebook,
+        "Facebook",
+        <Facebook size={iconSize[size]} />
       )}
       
-      {spotify && (
-        <a 
-          href={spotify} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className={`${sizeClasses[size]} rounded-full bg-slate-700 flex items-center justify-center hover:bg-orange-500 transition-colors`}
-          aria-label="Spotify"
-        >
-          <Music size={iconSize[size]} />
-        </a>
+      {spotify && renderSocialItem(
+        spotify,
+        "Spotify",
+        <Music size={iconSize[size]} />
       )}
       
-      {twitter && (
-        <a 
-          href={twitter} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className={`${sizeClasses[size]} rounded-full bg-slate-700 flex items-center justify-center hover:bg-orange-500 transition-colors`}
-          aria-label="Twitter"
-        >
-          <Twitter size={iconSize[size]} />
-        </a>
+      {twitter && renderSocialItem(
+        twitter,
+        "Twitter",
+        <Twitter size={iconSize[size]} />
       )}
       
-      {youtube && (
-        <a 
-          href={youtube} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className={`${sizeClasses[size]} rounded-full bg-slate-700 flex items-center justify-center hover:bg-orange-500 transition-colors`}
-          aria-label="YouTube"
-        >
-          <Youtube size={iconSize[size]} />
-        </a>
+      {youtube && renderSocialItem(
+        youtube,
+        "YouTube",
+        <Youtube size={iconSize[size]} />
       )}
       
-      {website && (
-        <a 
-          href={website} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className={`${sizeClasses[size]} rounded-full bg-slate-700 flex items-center justify-center hover:bg-orange-500 transition-colors`}
-          aria-label="Website"
-        >
-          <LinkIcon size={iconSize[size]} />
-        </a>
+      {website && renderSocialItem(
+        website,
+        "Website",
+        <LinkIcon size={iconSize[size]} />
       )}
     </div>
   );

@@ -121,7 +121,7 @@ const ArtistDetailPage = () => {
                     <div className="flex flex-col md:flex-row md:items-center justify-between">
                       <div>
                         <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">{artist.name}</h1>
-                        <div className="flex items-center text-slate-600 dark:text-slate-300 mb-2">
+                        <div className="flex items-center text-[var(--text-secondary)] mb-2">
                           <MapPin className="h-4 w-4 mr-1" />
                           <span>{artist.hometown}</span>
                         </div>
@@ -172,7 +172,7 @@ const ArtistDetailPage = () => {
                       ))}
                     </div>
                     
-                    <p className="text-slate-600 dark:text-slate-300 mb-4">{artist.description}</p>
+                    <p className="text-[var(--text-secondary)] mb-4">{artist.description}</p>
                     
                     <SocialMediaLinks socialMedia={artist.socialMedia ?? {}} size="medium" />
                   </div>
@@ -195,7 +195,7 @@ const ArtistDetailPage = () => {
                       <Music className="h-6 w-6 text-orange-500" />
                     </div>
                     <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">Songs</h3>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">Manage your song library</p>
+                    <p className="text-[var(--text-secondary)] text-sm">Manage your song library</p>
                   </Link>
                   
                   <Link 
@@ -206,7 +206,7 @@ const ArtistDetailPage = () => {
                       <Calendar className="h-6 w-6 text-orange-500" />
                     </div>
                     <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">Events</h3>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">Manage your gigs and events</p>
+                    <p className="text-[var(--text-secondary)] text-sm">Manage your gigs and events</p>
                   </Link>
                   
                   <Link 
@@ -217,7 +217,7 @@ const ArtistDetailPage = () => {
                       <Users className="h-6 w-6 text-slate-900 dark:text-white" />
                     </div>
                     <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">Members</h3>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">Manage band members</p>
+                    <p className="text-[var(--text-secondary)] text-sm">Manage band members</p>
                   </Link>
                 </div>
               </div>
@@ -228,17 +228,17 @@ const ArtistDetailPage = () => {
                 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Members</h3>
+                    <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Members</h3>
                     <p className="text-2xl font-bold text-slate-900 dark:text-white">{artist.members?.length || 0}</p>
                   </div>
                   
                   <div>
-                    <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Songs</h3>
+                    <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Songs</h3>
                     <p className="text-2xl font-bold text-slate-900 dark:text-white">0</p>
                   </div>
                   
                   <div>
-                    <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Upcoming Events</h3>
+                    <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Upcoming Events</h3>
                     <p className="text-2xl font-bold text-slate-900 dark:text-white">0</p>
                   </div>
                 </div>

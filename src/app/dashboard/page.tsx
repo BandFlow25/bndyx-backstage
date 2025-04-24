@@ -3,12 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { jwtDecode } from 'jwt-decode';
-import Link from 'next/link';
 import { useAuth } from 'bndy-ui/components/auth';
 import { useArtist } from '@/lib/context/artist-context';
 import { ArtistService } from '@/lib/services/artist-service';
-import ArtistCard from '@/components/artists/ArtistCard';
-import { Music, PlusCircle, BookOpen, ListMusic, FileMusic, Users } from 'lucide-react';
+
+// Import dashboard components
+import MyDashboard from '@/components/dashboard/MyDashboard';
+import EmptyArtistState from '@/components/dashboard/EmptyArtistState';
 
 // Define a custom JWT payload type for our token
 interface BndyJwtPayload {
@@ -182,156 +183,7 @@ export default function Dashboard() {
     };
   }, [artistLoading]);
 
-  // Component for the empty state (no artists)
-  const EmptyArtistState = () => (
-    <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 mb-8 transition-colors duration-300">
-      <Music className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" />
-      <h3 className="mt-4 text-lg font-medium text-slate-900 dark:text-white">No artists yet</h3>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        Get started by creating your first artist profile.
-      </p>
-      <div className="mt-6">
-        <Link
-          href="/artists/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-        >
-          <PlusCircle className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-          Create Artist
-        </Link>
-      </div>
-    </div>
-  );
-  
-  // Component for selecting an artist
-  const SelectArtistState = () => (
-    <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 mb-8 transition-colors duration-300">
-      <Music className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" />
-      <h3 className="mt-4 text-lg font-medium text-slate-900 dark:text-white">Select an Artist</h3>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        Choose an artist to manage their playbook, setlists, songs, and more.
-      </p>
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
-        {currentUserArtists.map(artist => (
-          <button
-            key={artist.id}
-            onClick={() => setCurrentArtistById(artist.id)}
-            className="flex flex-col items-center p-4 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-          >
-            {artist.avatarUrl ? (
-              <img 
-                src={artist.avatarUrl} 
-                alt={artist.name} 
-                className="h-16 w-16 rounded-full mb-3 object-cover"
-              />
-            ) : (
-              <div className="h-16 w-16 rounded-full bg-orange-500 flex items-center justify-center mb-3">
-                <span className="text-white text-xl font-medium">{artist.name.charAt(0)}</span>
-              </div>
-            )}
-            <span className="font-medium text-slate-900 dark:text-white">{artist.name}</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              {artist.members && artist.members.length > 1 ? 'Band' : 'Solo Artist'}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-  
-  // Component for active artist dashboard
-  const ActiveArtistDashboard = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 mb-8 transition-colors duration-300">
-      <div className="flex items-center mb-6">
-        {currentArtist?.avatarUrl ? (
-          <img 
-            src={currentArtist.avatarUrl} 
-            alt={currentArtist.name} 
-            className="h-16 w-16 rounded-full mr-4 object-cover"
-          />
-        ) : (
-          <div className="h-16 w-16 rounded-full bg-orange-500 flex items-center justify-center mr-4">
-            <span className="text-white text-xl font-medium">{currentArtist?.name.charAt(0)}</span>
-          </div>
-        )}
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">{currentArtist?.name}</h2>
-          <p className="text-slate-600 dark:text-slate-300">{currentArtist && currentArtist.members && currentArtist.members.length > 1 ? 'Band' : 'Solo Artist'}</p>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg transition-colors duration-300">
-          <h3 className="text-slate-900 dark:text-white font-medium mb-2">Upcoming Events</h3>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">No upcoming events</p>
-          <Link 
-            href="/events/new" 
-            className="mt-3 text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 text-sm flex items-center"
-          >
-            <PlusCircle size={14} className="mr-1" />
-            Add Event
-          </Link>
-        </div>
-        
-        <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg transition-colors duration-300">
-          <h3 className="text-slate-900 dark:text-white font-medium mb-2">Active Songs</h3>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">No active songs</p>
-          <Link 
-            href="/songs" 
-            className="mt-3 text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 text-sm flex items-center"
-          >
-            <PlusCircle size={14} className="mr-1" />
-            Manage Songs
-          </Link>
-        </div>
-        
-        <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg transition-colors duration-300">
-          <h3 className="text-slate-900 dark:text-white font-medium mb-2">Recent Setlists</h3>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">No recent setlists</p>
-          <Link 
-            href="/setlist/new" 
-            className="mt-3 text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 text-sm flex items-center"
-          >
-            <PlusCircle size={14} className="mr-1" />
-            Create Setlist
-          </Link>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Link 
-          href="/playbook" 
-          className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-center"
-        >
-          <BookOpen className="h-8 w-8 mx-auto text-orange-500 dark:text-orange-400 mb-2" />
-          <span className="text-slate-900 dark:text-white font-medium">Playbook</span>
-        </Link>
-        
-        <Link 
-          href="/setlist" 
-          className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-center"
-        >
-          <ListMusic className="h-8 w-8 mx-auto text-orange-500 dark:text-orange-400 mb-2" />
-          <span className="text-slate-900 dark:text-white font-medium">Setlists</span>
-        </Link>
-        
-        <Link 
-          href="/songs" 
-          className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-center"
-        >
-          <FileMusic className="h-8 w-8 mx-auto text-orange-500 dark:text-orange-400 mb-2" />
-          <span className="text-slate-900 dark:text-white font-medium">Songs</span>
-        </Link>
-        
-        <Link 
-          href="/members" 
-          className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-center"
-        >
-          <Users className="h-8 w-8 mx-auto text-orange-500 dark:text-orange-400 mb-2" />
-          <span className="text-slate-900 dark:text-white font-medium">Members</span>
-        </Link>
-      </div>
-    </div>
-  );
+    // No component definitions needed here as they've been moved to separate files
   
   if (artistLoading) {
     return <BndyLoadingScreen label="Loading your artists…" />;
@@ -450,34 +302,9 @@ export default function Dashboard() {
         ) : !artistLoading && currentUserArtists.length === 0 ? (
           // No artists state
           <EmptyArtistState />
-        ) : currentUserArtists.length > 0 && !hasActiveArtist ? (
-          // Has artists but none selected
-          <SelectArtistState />
-        ) : hasActiveArtist && currentArtist ? (
-          // Active artist dashboard
-          <ActiveArtistDashboard />
-        ) : null}
-        
-        {/* Artist Management Section */}
-        {currentUserArtists.length > 0 && (
-          <div className="mt-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white transition-colors duration-300">Manage Your Artists</h2>
-              <Link 
-                href="/artists/new" 
-                className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
-              >
-                <PlusCircle size={18} />
-                Add Artist
-              </Link>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {currentUserArtists.map(artist => (
-                <ArtistCard key={artist.id} artist={artist} />
-              ))}
-            </div>
-          </div>
+        ) : (
+          // Show the new dashboard layout
+          <MyDashboard artists={currentUserArtists} />
         )}
       </div>
     </MainLayout>
