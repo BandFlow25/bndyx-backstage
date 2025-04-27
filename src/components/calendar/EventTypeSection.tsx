@@ -41,7 +41,7 @@ export const EventTypeSection: React.FC<EventTypeSectionProps> = ({
             // User context event types
             <>
               {/* Commented out 'Available' option as requested */}
-              {/* <option value="available">Available</option> */}
+              <option value="available">Available</option>
               <option value="unavailable">Unavailable</option>
               <option value="tentative">Tentative</option>
               <option value="other">Other</option>

@@ -39,12 +39,61 @@ service cloud.firestore {
     }
 
     
-    // Rules for bndy_artists collection - TEMPORARY WIDE OPEN ACCESS FOR TESTING
-    match /bndy_artists/{artistId} {
-      // WARNING: This rule allows anyone to read/write this collection
-      // This is ONLY for debugging and should be replaced with proper rules
-      allow read, write: if true;
-    }
+// Rules for bndy_artists collection with members subcollection
+match /bndy_artists/{artistId} {
+  // Artist document rules
+  allow read: if true; // Public read access to artist profiles
+  
+  // Only authenticated users can create artists
+  allow create: if request.auth != null;
+  
+  // Only members with admin or owner role can update artist details
+  allow update: if isMemberWithRole(artistId, request.auth.uid, ["owner", "admin"]);
+  
+  // Only the owner can delete an artist
+  allow delete: if isMemberWithRole(artistId, request.auth.uid, ["owner"]);
+  
+  // TEMPORARY: Wide open access to members subcollection for testing
+  match /members/{memberId} {
+    // WARNING: This allows anyone to read/write members documents
+    // This is ONLY for testing and should be replaced with proper rules
+    allow read, write: if true;
+  }
+}
+
+// TEMPORARY: Wide open access to members subcollection for testing
+match /{path=**}/members/{memberId} {
+  // WARNING: This allows anyone to read/write members documents
+  // This is ONLY for testing and should be replaced with proper rules
+  allow read, write: if true;
+}
+
+// Helper function to check if a user is a member with a specific role
+function isMemberWithRole(artistId, userId, roles) {
+  let memberDoc = get(/databases/$(database)/documents/bndy_artists/$(artistId)/members/$(userId));
+  return memberDoc != null && 
+         memberDoc.data != null && 
+         memberDoc.data.userId == userId && 
+         memberDoc.data.role in roles;
+}
+
+
+
+    // Rules for bndy_events collection - TEMPORARY WIDE OPEN ACCESS FOR TESTING
+match /bndy_events/{eventId} {
+  // WARNING: This rule allows anyone to read/write this collection
+  // This is ONLY for debugging and should be replaced with proper rules
+  allow read, write: if true;
+}
+
+// Rules for bndy_venues collection - TEMPORARY WIDE OPEN ACCESS FOR TESTING
+match /bndy_venues/{venueId} {
+  // WARNING: This rule allows anyone to read/write this collection
+  // This is ONLY for debugging and should be replaced with proper rules
+  allow read, write: if true;
+}
+    
+ 
 
     // Keep all your existing rules for bf_bands
     match /bf_bands/{bandId} {

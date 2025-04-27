@@ -55,14 +55,16 @@ export const DateTimeSection: React.FC<DateTimeSectionProps> = ({
         <label htmlFor="eventDate" className="block mb-1 font-medium text-slate-700 special-event-form-label">
           Start Date*
         </label>
-        <div className="relative">
+        <div className="relative" onClick={(e) => e.stopPropagation()}>
           <BndyDatePicker
             date={new Date(eventDate)}
             onSelect={(date) => {
               if (date) {
-                setEventDate(date.toISOString().slice(0, 10));
+                // Use local date components to prevent timezone issues
+                const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                setEventDate(formattedDate);
                 if (!showEndDate) {
-                  setEndDate(date.toISOString().slice(0, 10));
+                  setEndDate(formattedDate);
                 }
               }
             }}
@@ -99,24 +101,28 @@ export const DateTimeSection: React.FC<DateTimeSectionProps> = ({
           <label htmlFor="endDate" className="block mb-1 font-medium text-slate-700 dark:text-white">
             End Date*
           </label>
-          <BndyDatePicker
-            date={new Date(endDate)}
-            onSelect={(date) => {
-              if (date) {
-                setEndDate(date.toISOString().slice(0, 10));
-              }
-            }}
-            buttonLabel={endDate ? new Date(endDate).toLocaleDateString('en-GB', {
-              weekday: 'short',
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            }) : 'Select end date'}
-            className="w-full"
-            minDate={new Date(eventDate) || new Date(today)}
-            darkMode={isDarkMode}
-            weekStartsOn={1} // Start week on Monday
-          />
+          <div onClick={(e) => e.stopPropagation()}>
+            <BndyDatePicker
+              date={new Date(endDate)}
+              onSelect={(date) => {
+                if (date) {
+                  // Use local date components to prevent timezone issues
+                  const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                  setEndDate(formattedDate);
+                }
+              }}
+              buttonLabel={endDate ? new Date(endDate).toLocaleDateString('en-GB', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+              }) : 'Select end date'}
+              className="w-full"
+              minDate={new Date(eventDate) || new Date(today)}
+              darkMode={isDarkMode}
+              weekStartsOn={1} // Start week on Monday
+            />
+          </div>
         </div>
       )}
 
@@ -156,7 +162,7 @@ export const DateTimeSection: React.FC<DateTimeSectionProps> = ({
 
       {!isAllDay && showTimeSelection && (
         <div className="mb-4">
-          <div className="mb-4">
+          <div className="mb-4" onClick={(e) => e.stopPropagation()}>
             <BndyTimePicker
               time={startTime}
               onTimeChange={(newTime) => {
@@ -204,7 +210,7 @@ export const DateTimeSection: React.FC<DateTimeSectionProps> = ({
           </div>
           
           {(showEndDate || endTime !== startTime) && (
-            <div className="mb-4">
+            <div className="mb-4" onClick={(e) => e.stopPropagation()}>
               <BndyTimePicker
                 time={endTime}
                 onTimeChange={setEndTime}

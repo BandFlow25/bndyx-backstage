@@ -10,7 +10,8 @@ import {
   serverTimestamp,
   Timestamp,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  collectionGroup
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { firestore, storage } from '../firebase';
@@ -86,11 +87,24 @@ export class ArtistService {
       ? data.name 
       : await this.generateUniqueName(data.name, data.hometown || '');
 
-    // Create the artist document
+    // Create the artist document (without members field)
     const artistsRef = collection(firestore, COLLECTIONS.ARTISTS);
     const newArtistRef = doc(artistsRef);
     
-    // Create the owner as the first member
+    const newArtist: Omit<Artist, 'members'> = {
+      id: newArtistRef.id,
+      name: artistName,
+      hometown: data.hometown,
+      genres: data.genres,
+      description: data.description,
+      socialMedia: data.socialMedia,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    };
+
+    await setDoc(newArtistRef, newArtist);
+    
+    // Create the owner as the first member in the members subcollection
     const owner: ArtistMember = {
       userId,
       displayName: userDisplayName,
@@ -98,21 +112,18 @@ export class ArtistService {
       joinedAt: Timestamp.now(),
       instruments: []
     };
-
-    const newArtist: Artist = {
-      id: newArtistRef.id,
-      name: artistName,
-      hometown: data.hometown,
-      genres: data.genres,
-      description: data.description,
-      socialMedia: data.socialMedia,
-      members: [owner],
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
-    };
-
-    await setDoc(newArtistRef, newArtist);
-    return newArtist;
+    
+    const membersCollectionRef = collection(firestore, COLLECTIONS.ARTISTS, newArtistRef.id, 'members');
+    const memberDocRef = doc(membersCollectionRef, userId);
+    await setDoc(memberDocRef, owner);
+    
+    // Return the artist with members attached
+    const artistWithMembers = {
+      ...newArtist,
+      members: [owner]
+    } as Artist;
+    
+    return artistWithMembers;
   }
 
   /**
@@ -128,7 +139,22 @@ export class ArtistService {
       return null;
     }
     
-    return artistDoc.data() as Artist;
+    const artistData = artistDoc.data();
+    
+    // Fetch members from subcollection
+    const membersCollectionRef = collection(firestore, COLLECTIONS.ARTISTS, artistId, 'members');
+    const membersSnapshot = await getDocs(membersCollectionRef);
+    
+    const members: ArtistMember[] = [];
+    membersSnapshot.forEach((memberDoc) => {
+      members.push({ ...memberDoc.data(), id: memberDoc.id } as ArtistMember);
+    });
+    
+    // Return the artist with members attached
+    return {
+      ...artistData,
+      members
+    } as Artist;
   }
 
   /**
@@ -137,53 +163,51 @@ export class ArtistService {
    * @returns Array of artists the user is a member of
    */
   static async getArtistsByUserId(userId: string): Promise<Artist[]> {
-    // Enable targeted debug logging
-    const logDebug = (message: string, ...args: any[]) => {
-      // Artist service logging removed
-    };
-    
     const startTime = Date.now();
-    logDebug(`Fetching artists for user: ${userId}`);
+    console.log(`[DEBUG] getArtistsByUserId - Starting for user: ${userId}`);
     
     try {
-      // Check if we have a token in localStorage
-      const token = typeof window !== 'undefined' ? localStorage.getItem('bndyAuthToken') : null;
-      if (token) {
-        try {
-          // Verify the token has the correct user ID
-          const payload = token ? JSON.parse(atob(token.split('.')[1])) : null;
-          if (payload?.uid !== userId) {
-            logDebug(`Warning: Token user ID (${payload?.uid}) doesn't match requested user ID (${userId})`);
-          }
-        } catch (err) {
-          // Silent error - just for debugging
-        }
-      }
+      console.log(`[DEBUG] getArtistsByUserId - Creating collectionGroup query for 'members'`);
+      // First, find all memberships for this user
+      const membershipQuery = query(
+        collectionGroup(firestore, 'members'),
+        where('userId', '==', userId)
+      );
       
-      // Get all artists and filter client-side for matching members
-      const artistsRef = collection(firestore, COLLECTIONS.ARTISTS);
-      const querySnapshot = await getDocs(artistsRef);
-      
-      logDebug(`Retrieved ${querySnapshot.size} artists from Firestore in ${Date.now() - startTime}ms`);
+      console.log(`[DEBUG] getArtistsByUserId - Executing collectionGroup query`);
+      const membershipSnapshot = await getDocs(membershipQuery);
+      console.log(`[DEBUG] getArtistsByUserId - Query completed, got ${membershipSnapshot.docs.length} results`);
       
       const artists: Artist[] = [];
       
-      querySnapshot.forEach((doc) => {
-        const artist = { id: doc.id, ...doc.data() } as Artist;
+      // For each membership, get the parent artist
+      console.log(`[DEBUG] getArtistsByUserId - Processing membership documents`);
+      for (const memberDoc of membershipSnapshot.docs) {
+        // Get the parent path parts to extract the artist ID
+        const pathParts = memberDoc.ref.path.split('/');
+        const artistId = pathParts[pathParts.length - 3]; // Format: "bndy_artists/{artistId}/members/{memberId}"
+        console.log(`[DEBUG] getArtistsByUserId - Found membership in artist: ${artistId}, path: ${memberDoc.ref.path}`);
         
-        // Check if this user is a member of the artist
-        const isMember = artist.members && Array.isArray(artist.members) && 
-          artist.members.some(member => member && member.userId === userId);
-        
-        if (isMember) {
+        // Get the artist document
+        console.log(`[DEBUG] getArtistsByUserId - Fetching artist details for: ${artistId}`);
+        const artist = await this.getArtistById(artistId);
+        if (artist) {
+          console.log(`[DEBUG] getArtistsByUserId - Successfully retrieved artist: ${artist.name}`);
           artists.push(artist);
+        } else {
+          console.log(`[DEBUG] getArtistsByUserId - Could not find artist document for ID: ${artistId}`);
         }
-      });
+      }
       
-      logDebug(`Found ${artists.length} artists for user (processing time: ${Date.now() - startTime}ms)`);
+      console.log(`[DEBUG] getArtistsByUserId - Found ${artists.length} artists for user (processing time: ${Date.now() - startTime}ms)`);
       return artists;
     } catch (error) {
-      logDebug(`Error fetching artists: ${Date.now() - startTime}ms elapsed`);
+      console.log(`[DEBUG] getArtistsByUserId - Error occurred after ${Date.now() - startTime}ms`);
+      console.error('Error fetching artists:', error);
+      if (error instanceof Error) {
+        console.error(`[DEBUG] getArtistsByUserId - Error details: ${error.message}`);
+        console.error(`[DEBUG] getArtistsByUserId - Error stack: ${error.stack}`);
+      }
       // Return empty array instead of throwing to prevent UI from hanging
       return [];
     }
@@ -285,20 +309,20 @@ export class ArtistService {
       throw new Error(`Artist with ID ${artistId} not found`);
     }
     
-    const artist = artistDoc.data() as Artist;
+    // Check if the user is already a member in the subcollection
+    const membersCollectionRef = collection(firestore, COLLECTIONS.ARTISTS, artistId, 'members');
+    const memberDocRef = doc(membersCollectionRef, member.userId);
+    const memberDoc = await getDoc(memberDocRef);
     
-    // Check if the user is already a member
-    const isMember = artist.members.some(m => m.userId === member.userId);
-    
-    if (isMember) {
+    if (memberDoc.exists()) {
       throw new Error(`User with ID ${member.userId} is already a member of this artist`);
     }
     
-    // Add the new member
-    const updatedMembers = [...artist.members, member];
+    // Add the new member to the subcollection
+    await setDoc(memberDocRef, member);
     
+    // Update the artist's updatedAt timestamp
     await updateDoc(artistRef, {
-      members: updatedMembers,
       updatedAt: serverTimestamp()
     });
     
@@ -320,27 +344,27 @@ export class ArtistService {
       throw new Error(`Artist with ID ${artistId} not found`);
     }
     
-    const artist = artistDoc.data() as Artist;
+    // Check if the user is a member in the subcollection
+    const membersCollectionRef = collection(firestore, COLLECTIONS.ARTISTS, artistId, 'members');
+    const memberDocRef = doc(membersCollectionRef, userId);
+    const memberDoc = await getDoc(memberDocRef);
     
-    // Check if the user is a member
-    const memberIndex = artist.members.findIndex(m => m.userId === userId);
-    
-    if (memberIndex === -1) {
+    if (!memberDoc.exists()) {
       throw new Error(`User with ID ${userId} is not a member of this artist`);
     }
     
-    // Check if the user is the owner
-    const isOwner = artist.members[memberIndex].role === 'owner';
+    const memberData = memberDoc.data() as ArtistMember;
     
-    if (isOwner) {
+    // Check if the user is the owner
+    if (memberData.role === 'owner') {
       throw new Error(`Cannot remove the owner from the artist`);
     }
     
-    // Remove the member
-    const updatedMembers = artist.members.filter(m => m.userId !== userId);
+    // Remove the member from the subcollection
+    await deleteDoc(memberDocRef);
     
+    // Update the artist's updatedAt timestamp
     await updateDoc(artistRef, {
-      members: updatedMembers,
       updatedAt: serverTimestamp()
     });
     
@@ -353,6 +377,17 @@ export class ArtistService {
    * @param artistId The artist ID
    */
   static async deleteArtist(artistId: string): Promise<void> {
+    // First, delete all members in the subcollection
+    const membersCollectionRef = collection(firestore, COLLECTIONS.ARTISTS, artistId, 'members');
+    const membersSnapshot = await getDocs(membersCollectionRef);
+    
+    const deletePromises = membersSnapshot.docs.map(memberDoc => 
+      deleteDoc(memberDoc.ref)
+    );
+    
+    await Promise.all(deletePromises);
+    
+    // Then delete the artist document
     const artistRef = doc(firestore, COLLECTIONS.ARTISTS, artistId);
     await deleteDoc(artistRef);
   }
@@ -376,19 +411,20 @@ export class ArtistService {
       throw new Error(`Artist with ID ${artistId} not found`);
     }
     
-    const artist = artistDoc.data() as Artist;
+    // Check if the email is already a member in the subcollection
+    const pendingUserId = `pending_${inviteData.email}`;
+    const membersCollectionRef = collection(firestore, COLLECTIONS.ARTISTS, artistId, 'members');
+    const memberDocRef = doc(membersCollectionRef, pendingUserId);
+    const memberDoc = await getDoc(memberDocRef);
     
-    // Check if the email is already a member
-    const isMember = artist.members.some(m => m.userId === `pending_${inviteData.email}`);
-    
-    if (isMember) {
+    if (memberDoc.exists()) {
       throw new Error(`User with email ${inviteData.email} is already a member of this artist`);
     }
     
     // Create a temporary member record for the invited user
     // This will be updated when they accept the invitation
     const newMember: ArtistMember = {
-      userId: `pending_${inviteData.email}`,
+      userId: pendingUserId,
       displayName: 'Invited User',
       role: inviteData.role,
       joinedAt: Timestamp.now(),
@@ -396,11 +432,11 @@ export class ArtistService {
       inviteCode: undefined // or set as needed
     };
     
-    // Add the new member to the artist
-    const updatedMembers = [...artist.members, newMember];
+    // Add the new member to the subcollection
+    await setDoc(memberDocRef, newMember);
     
+    // Update the artist's updatedAt timestamp
     await updateDoc(artistRef, {
-      members: updatedMembers,
       updatedAt: serverTimestamp()
     });
     
@@ -427,42 +463,53 @@ export class ArtistService {
       throw new Error(`Artist with ID ${artistId} not found`);
     }
     
-    const artist = artistDoc.data() as Artist;
+    // Get the members subcollection
+    const membersCollectionRef = collection(firestore, COLLECTIONS.ARTISTS, artistId, 'members');
     
-    // Find the member
-    const memberIndex = artist.members.findIndex(m => m.userId === userId);
+    // Find the member to update
+    const memberDocRef = doc(membersCollectionRef, userId);
+    const memberDoc = await getDoc(memberDocRef);
     
-    if (memberIndex === -1) {
+    if (!memberDoc.exists()) {
       throw new Error(`User with ID ${userId} is not a member of this artist`);
     }
+    
+    const memberData = memberDoc.data() as ArtistMember;
     
     // If changing to owner, we need to update the current owner as well
     if (newRole === 'owner') {
       // Find the current owner
-      const currentOwnerIndex = artist.members.findIndex(m => m.role === 'owner');
+      const ownerQuery = query(membersCollectionRef, where('role', '==', 'owner'));
+      const ownerSnapshot = await getDocs(ownerQuery);
       
-      if (currentOwnerIndex !== -1) {
+      if (!ownerSnapshot.empty) {
         // Demote the current owner to admin
-        artist.members[currentOwnerIndex].role = 'admin';
+        const currentOwnerDoc = ownerSnapshot.docs[0];
+        const currentOwnerData = currentOwnerDoc.data() as ArtistMember;
+        await updateDoc(doc(membersCollectionRef, currentOwnerData.userId), {
+          role: 'admin'
+        });
       }
       
       // Promote the member to owner
-      artist.members[memberIndex].role = 'owner';
+      await updateDoc(memberDocRef, {
+        role: 'owner'
+      });
     } else {
       // Just update the role
       // First check if they're the owner and being demoted
-      const isCurrentlyOwner = artist.members[memberIndex].role === 'owner';
-      
-      if (isCurrentlyOwner) {
+      if (memberData.role === 'owner') {
         throw new Error(`Cannot demote the owner. Transfer ownership to another member first.`);
       }
       
       // Update the role
-      artist.members[memberIndex].role = newRole;
+      await updateDoc(memberDocRef, {
+        role: newRole
+      });
     }
     
+    // Update the artist's updatedAt timestamp
     await updateDoc(artistRef, {
-      members: artist.members,
       updatedAt: serverTimestamp()
     });
     

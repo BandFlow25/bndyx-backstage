@@ -45,10 +45,21 @@ export default function EventForm({
   
   // Form state - use newEventStartDate if provided (from calendar click)
   const [title, setTitle] = useState(event?.title || '');
-  const [eventDate, setEventDate] = useState(
-    event?.start ? new Date(event.start).toISOString().slice(0, 10) : 
-    newEventStartDate ? newEventStartDate.toISOString().slice(0, 10) : today
-  );
+  
+  // Initialize event date with proper timezone handling
+  const [eventDate, setEventDate] = useState(() => {
+    if (event?.start) {
+      // For existing events, use the stored date
+      const date = new Date(event.start);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    } else if (newEventStartDate) {
+      // For new events from calendar click, preserve the exact date that was clicked
+      return `${newEventStartDate.getFullYear()}-${String(newEventStartDate.getMonth() + 1).padStart(2, '0')}-${String(newEventStartDate.getDate()).padStart(2, '0')}`;
+    } else {
+      // Default to today
+      return today;
+    }
+  });
   const [startTime, setStartTime] = useState(
     event?.start ? roundToNearestQuarterHour(new Date(event.start)) : '18:00'
   );
@@ -57,9 +68,20 @@ export default function EventForm({
   );
   // Default to single-day events for new events
   const [showEndDate, setShowEndDate] = useState(event?.id ? (event?.start?.toDateString() !== event?.end?.toDateString()) : false);
-  const [endDate, setEndDate] = useState(
-    event?.end ? new Date(event.end).toISOString().slice(0, 10) : eventDate
-  );
+  // Initialize end date with proper timezone handling
+  const [endDate, setEndDate] = useState(() => {
+    if (event?.end) {
+      // For existing events, use the stored end date
+      const date = new Date(event.end);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    } else if (newEventStartDate) {
+      // For new events, use the same date as the start date
+      return `${newEventStartDate.getFullYear()}-${String(newEventStartDate.getMonth() + 1).padStart(2, '0')}-${String(newEventStartDate.getDate()).padStart(2, '0')}`;
+    } else {
+      // Default to same as start date
+      return eventDate;
+    }
+  });
   const [showTimeSelection, setShowTimeSelection] = useState(
     calendarContext === 'band' || (event && !event.allDay) || false
   );
@@ -82,7 +104,13 @@ export default function EventForm({
   }, [eventDate, showEndDate]);
   // Always default to all-day events for new events
   const [isAllDay, setIsAllDay] = useState(event?.id ? event?.allDay || false : true);
-  const [eventType, setEventType] = useState<EventType>(event?.eventType || (calendarContext === 'user' ? 'unavailable' : 'practice'));
+  // Make sure we preserve the event type from the form selection
+  const [eventType, setEventType] = useState<EventType>(
+    // If editing an existing event, use its type
+    event?.eventType || 
+    // Otherwise use appropriate default based on context
+    (calendarContext === 'user' ? 'unavailable' : 'practice')
+  );
   const [isPublic, setIsPublic] = useState(event?.isPublic || false);
   const [venueId, setVenueId] = useState(event?.venueId || '');
   const [description, setDescription] = useState(event?.description || '');
@@ -105,15 +133,34 @@ export default function EventForm({
       return;
     }
     
-    // Create start and end dates
-    const start = new Date(`${eventDate}T${isAllDay || !showTimeSelection ? '00:00' : startTime}`);
-    let end;
+    // Create start and end dates with proper timezone handling
+    const startDateParts = eventDate.split('-').map(Number);
+    const endDateParts = endDate.split('-').map(Number);
     
-    if (showEndDate) {
-      end = new Date(`${endDate}T${isAllDay || !showTimeSelection ? '23:59' : endTime}`);
+    // Create dates using local date components to avoid timezone issues
+    let start, end;
+    
+    if (isAllDay || !showTimeSelection) {
+      // For all-day events, set time to midnight in local timezone
+      start = new Date(startDateParts[0], startDateParts[1] - 1, startDateParts[2], 0, 0, 0);
+      
+      if (showEndDate) {
+        end = new Date(endDateParts[0], endDateParts[1] - 1, endDateParts[2], 23, 59, 0);
+      } else {
+        end = new Date(startDateParts[0], startDateParts[1] - 1, startDateParts[2], 23, 59, 0);
+      }
     } else {
-      // If no end date is specified, use the same date with end time or 23:59
-      end = new Date(`${eventDate}T${isAllDay || !showTimeSelection ? '23:59' : endTime}`);
+      // For time-specific events, parse the time strings
+      const [startHours, startMinutes] = startTime.split(':').map(Number);
+      const [endHours, endMinutes] = endTime.split(':').map(Number);
+      
+      start = new Date(startDateParts[0], startDateParts[1] - 1, startDateParts[2], startHours, startMinutes, 0);
+      
+      if (showEndDate) {
+        end = new Date(endDateParts[0], endDateParts[1] - 1, endDateParts[2], endHours, endMinutes, 0);
+      } else {
+        end = new Date(startDateParts[0], startDateParts[1] - 1, startDateParts[2], endHours, endMinutes, 0);
+      }
     }
     
     // Validate dates
@@ -139,7 +186,8 @@ export default function EventForm({
         start,
         end,
         allDay: isAllDay,
-        eventType,
+        // Ensure we're using the selected event type
+        eventType: eventType,
         isPublic: calendarContext === 'band' ? isPublic : false, // Only band events can be public
         description,
         // Only include artistId for band/artist context
@@ -176,7 +224,7 @@ export default function EventForm({
         </button>
       </div>
       
-      <form onSubmit={handleSubmit} className="p-4 bg-white dark:bg-slate-800 transition-colors duration-300 special-event-form-content">
+      <form onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()} className="p-4 bg-white dark:bg-slate-800 transition-colors duration-300 special-event-form-content">
         {formError && (
           <div className="mb-4 p-3 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 rounded-md">
             {formError}

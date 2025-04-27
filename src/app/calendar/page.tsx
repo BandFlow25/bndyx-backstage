@@ -202,7 +202,7 @@ export default function UserCalendarPage() {
                 title: '',
                 start: newEventStartDate || new Date(),
                 end: newEventEndDate || new Date(),
-                eventType: 'available' as EventType,
+                eventType: 'unavailable' as EventType,
                 isPublic: false
               }}
               calendarContext="user"

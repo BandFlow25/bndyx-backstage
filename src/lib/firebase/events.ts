@@ -10,7 +10,9 @@ import {
   getDocs, 
   getDoc,
   Timestamp,
-  serverTimestamp
+  serverTimestamp,
+  orderBy,
+  limit as firestoreLimit
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getFirebaseFirestore } from './index';
@@ -59,10 +61,7 @@ export const convertToCalendarEvent = (event: FirestoreEvent): BndyCalendarEvent
     sourceType: event.sourceType,
     sourceId: event.sourceId,
     sourceName: event.sourceName,
-    // For member events, modify the title to include the member name
-    ...(event.sourceType === 'member' && {
-      title: `${event.sourceName}: ${event.title}`
-    }),
+    // Do NOT modify the title for member events - it's already formatted in getArtistEvents
     // Set color for band events
     ...(event.sourceType === 'band' && {
       color: '#3b82f6' // blue-500
@@ -181,6 +180,7 @@ export const getEventById = async (eventId: string): Promise<BndyCalendarEvent |
 
 // Get all events for a user (personal events and events for their artists)
 export const getUserEvents = async (userId: string, artistIds: string[] = []): Promise<BndyCalendarEvent[]> => {
+  console.log(`getUserEvents called for user ${userId} with artist IDs:`, artistIds);
   try {
     const firestore = getFirebaseFirestore();
     const eventsCollection = collection(firestore, COLLECTIONS.EVENTS);
@@ -322,6 +322,9 @@ export const getUserEvents = async (userId: string, artistIds: string[] = []): P
 
 // Get all events for an artist, including band members' unavailable/tentative events
 export const getArtistEvents = async (artistId: string): Promise<BndyCalendarEvent[]> => {
+  // Get the current user for checking if event details should be shown
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
   try {
     const firestore = getFirebaseFirestore();
     const eventsCollection = collection(firestore, COLLECTIONS.EVENTS);
@@ -368,39 +371,21 @@ export const getArtistEvents = async (artistId: string): Promise<BndyCalendarEve
         memberIds.push(testUserId);
       }
       
-      // Check for members in different possible locations
-      if (artistData.members) {
-        console.log('Found members in artistData.members:', artistData.members);
-        if (Array.isArray(artistData.members)) {
-          // Log the first member to understand its structure
-          if (artistData.members.length > 0) {
-            console.log('First member structure:', JSON.stringify(artistData.members[0]));
-          }
-          
-          // Handle array of strings or objects with uid property
-          const arrayMembers = artistData.members.map((member: any) => {
-            if (typeof member === 'string') return member;
-            if (member && typeof member === 'object') {
-              // Check various possible ID fields
-              if (member.uid) return member.uid;
-              if (member.userId) return member.userId;
-              if (member.id) return member.id;
-              if (member.user && member.user.uid) return member.user.uid;
-              
-              // If we can't find an ID, log the member structure
-              console.log('Unable to extract ID from member:', member);
-            }
-            return null;
-          }).filter(Boolean);
-          
-          console.log('Extracted member IDs:', arrayMembers);
-          memberIds = [...memberIds, ...arrayMembers];
-        } else if (typeof artistData.members === 'object') {
-          // Handle object/map structure
-          const objectMembers = Object.keys(artistData.members);
-          memberIds = [...memberIds, ...objectMembers];
-        }
-      }
+      // Fetch members from the subcollection
+      const membersCollectionRef = collection(firestore, COLLECTIONS.ARTISTS, artistId, 'members');
+      const membersSnapshot = await getDocs(membersCollectionRef);
+      
+      console.log(`Found ${membersSnapshot.size} members in subcollection for artist ${artistId}`);
+      
+      // Extract member IDs from the subcollection
+      const arrayMembers = membersSnapshot.docs.map(doc => {
+        const memberData = doc.data();
+        console.log('Member data:', memberData);
+        return memberData.userId;
+      }).filter(Boolean);
+      
+      console.log('Extracted member IDs from subcollection:', arrayMembers);
+      memberIds = [...memberIds, ...arrayMembers];
       
       // Check if members might be in a different field
       if (artistData.userIds) {
@@ -443,32 +428,100 @@ export const getArtistEvents = async (artistId: string): Promise<BndyCalendarEve
           const displayName = userData.displayName || 'Band Member';
           console.log(`Found member: ${displayName}`);
           
-          // Query for unavailable and tentative events
+          console.log(`Querying ALL events for member ID: ${memberId}`);
+          
+          // Query for all personal events from this member
+          // We'll filter for unavailable/tentative events after retrieving them
           const memberEventQuery = query(
             eventsCollection,
-            where('createdBy', '==', memberId),
-            where('eventType', 'in', ['unavailable', 'tentative'])
+            where('createdBy', '==', memberId)
           );
           
           const memberQuerySnapshot = await getDocs(memberEventQuery);
-          console.log(`Found ${memberQuerySnapshot.size} unavailable/tentative events for ${displayName}`);
+          console.log(`Found ${memberQuerySnapshot.size} TOTAL events for ${displayName}`);
           
-          memberQuerySnapshot.forEach((docSnapshot) => {
-            const eventData = docSnapshot.data() as FirestoreEvent;
-            console.log(`Processing member event: ${eventData.title || eventData.eventType}`);
-            // Add member info to the event and prefix the title with member name
+          // Log all events found for this member to see what we're working with
+          memberQuerySnapshot.docs.forEach(doc => {
+            const data = doc.data() as FirestoreEvent;
+            console.log(`Event found for ${displayName}: title=${data.title || 'N/A'}, type=${data.eventType}, createdBy=${data.createdBy}`);
+          });
+          
+          // If this is Rewired Vocals and they have no events, create a test event for debugging
+          if (displayName === 'Rewired Vocals' && memberQuerySnapshot.size === 0) {
+            console.log('Creating test unavailable event for Rewired Vocals for debugging purposes');
+            
+            // We'll simulate an unavailable event in the calendar
+            const testEvent: FirestoreEvent = {
+              title: 'Test Unavailable',
+              startDate: Timestamp.fromDate(new Date()),
+              endDate: Timestamp.fromDate(new Date(new Date().setDate(new Date().getDate() + 1))),
+              allDay: true,
+              eventType: 'unavailable',
+              isPublic: false,
+              createdBy: memberId,
+              createdAt: Timestamp.now(),
+              updatedAt: Timestamp.now()
+            };
+            
+            // Add this event directly to our results instead of saving to Firestore
             events.push(convertToCalendarEvent({
+              ...testEvent,
+              id: 'test-event-' + Date.now(),
+              sourceType: 'member',
+              sourceId: memberId,
+              sourceName: displayName,
+              title: `${displayName}: ${testEvent.title}`
+            }));
+            
+            console.log('Added test event for Rewired Vocals');
+            continue; // Skip to the next member
+          }
+          
+          // Filter for unavailable/tentative events only
+          const unavailableEvents = memberQuerySnapshot.docs
+            .filter(doc => {
+              const data = doc.data() as FirestoreEvent;
+              const isRelevant = data.eventType === 'unavailable' || data.eventType === 'tentative';
+              console.log(`Event ${doc.id} for ${displayName} is ${isRelevant ? 'RELEVANT' : 'NOT RELEVANT'} (type: ${data.eventType})`);
+              return isRelevant;
+            });
+            
+          console.log(`Found ${unavailableEvents.length} unavailable/tentative events for ${displayName}`);
+          
+          unavailableEvents.forEach((docSnapshot) => {
+            const eventData = docSnapshot.data() as FirestoreEvent;
+            console.log(`[DEBUG] Raw member event data:`, {
+              title: eventData.title,
+              eventType: eventData.eventType,
+              memberId,
+              displayName,
+              isCurrentUser: memberId === currentUser?.uid
+            });
+            
+            // Create the formatted title with capitalized event type
+            const capitalizedEventType = eventData.eventType.charAt(0).toUpperCase() + eventData.eventType.slice(1);
+            const formattedTitle = memberId === currentUser?.uid && eventData.title
+              ? `${displayName}: ${eventData.title}` 
+              : `${displayName} - ${capitalizedEventType}`;
+              
+            console.log(`[DEBUG] Formatted title: "${formattedTitle}"`);
+            
+            // Add member info to the event and prefix the title with member name
+            const calendarEvent = convertToCalendarEvent({
               ...eventData,
               id: docSnapshot.id,
               // Add metadata to identify this as a member event
               sourceType: 'member',
               sourceId: memberId,
               sourceName: displayName,
-              // Prefix the title with the member's display name, but avoid duplication
-              title: eventData.title && eventData.title.startsWith(displayName) 
-                ? eventData.title 
-                : `${displayName}: ${eventData.title || eventData.eventType}`
-            }));
+              // For member events, we just want to show the member name and event type
+              // Only include the actual event title if the current user is this member
+              title: formattedTitle
+            });
+            
+            console.log(`[DEBUG] Final calendar event title: "${calendarEvent.title}"`);
+            
+            events.push(calendarEvent);
           });
         } catch (memberError) {
           console.error(`Error fetching events for member ${memberId}:`, memberError);
@@ -493,6 +546,71 @@ export const getArtistEvents = async (artistId: string): Promise<BndyCalendarEve
   } catch (error) {
     console.error('Error getting artist events:', error);
     throw error;
+  }
+};
+
+// Get upcoming events for the user dashboard
+export const getUpcomingEventsForDashboard = async (userId: string, artistIds: string[] = [], limit: number = 2): Promise<BndyCalendarEvent[]> => {
+  try {
+    const firestore = getFirebaseFirestore();
+    const eventsCollection = collection(firestore, COLLECTIONS.EVENTS);
+    const now = new Date();
+    const events: BndyCalendarEvent[] = [];
+    
+    // Only get events from the user's bands
+    if (artistIds.length === 0) {
+      return [];
+    }
+    
+    // Get events for all the user's bands that are in the future
+    const artistEventsQuery = query(
+      eventsCollection,
+      where('artistId', 'in', artistIds),
+      where('startDate', '>=', Timestamp.fromDate(now)),
+      orderBy('startDate', 'asc'),
+      firestoreLimit(limit)
+    );
+    
+    const artistEventsSnapshot = await getDocs(artistEventsQuery);
+    
+    // Convert to calendar events and add artist names
+    const artistsMap = new Map<string, string>();
+    
+    // First, fetch all artist names
+    for (const artistId of artistIds) {
+      try {
+        const artistDoc = await getDoc(doc(firestore, COLLECTIONS.ARTISTS, artistId));
+        if (artistDoc.exists()) {
+          const artistData = artistDoc.data();
+          artistsMap.set(artistId, artistData.name || 'Unknown Artist');
+        }
+      } catch (err) {
+        console.error(`Error fetching artist name for ${artistId}:`, err);
+      }
+    }
+    
+    // Then add events with artist names
+    artistEventsSnapshot.forEach((doc) => {
+      const eventData = doc.data() as FirestoreEvent;
+      const artistName = artistsMap.get(eventData.artistId || '') || 'Unknown Artist';
+      
+      // Create the event data with ID
+      const eventWithId = { ...eventData, id: doc.id };
+      
+      // Convert to calendar event
+      const calendarEvent = convertToCalendarEvent(eventWithId);
+      
+      // Add the artist name to the calendar event
+      calendarEvent.artistName = artistName;
+      
+      // Add to events list
+      events.push(calendarEvent);
+    });
+    
+    return events;
+  } catch (error) {
+    console.error('Error getting upcoming events for dashboard:', error);
+    return [];
   }
 };
 

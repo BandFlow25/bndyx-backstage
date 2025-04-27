@@ -118,6 +118,7 @@ export default function EventDetailsModal({
             onCancel={() => setIsEditing(false)}
             isArtistContext={isArtistContext}
             artistId={event.artistId}
+            calendarContext={calendarContext}
           />
         </div>
       </div>
@@ -187,10 +188,7 @@ export default function EventDetailsModal({
               <X size={20} />
             </button>
           </div>
-          <div className="mt-1 text-white/90">
-            {event.eventType.charAt(0).toUpperCase() + event.eventType.slice(1)}
-            {/* Don't show a badge for band events */}
-          </div>
+          {/* Event type removed from here since it's already in the title */}
         </div>
         
         <div className="p-4">
