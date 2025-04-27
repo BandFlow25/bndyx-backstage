@@ -16,6 +16,8 @@ interface CalendarContextType {
   events: BndyCalendarEvent[];
   isLoading: boolean;
   error: Error | null;
+  showBandEvents: boolean;
+  toggleBandEvents: () => void;
   createNewEvent: (event: BndyCalendarEvent) => Promise<string>;
   updateExistingEvent: (eventId: string, event: Partial<BndyCalendarEvent>) => Promise<void>;
   removeEvent: (eventId: string) => Promise<void>;
@@ -27,6 +29,8 @@ const CalendarContext = createContext<CalendarContextType>({
   events: [],
   isLoading: false,
   error: null,
+  showBandEvents: true,
+  toggleBandEvents: () => {},
   createNewEvent: async () => '',
   updateExistingEvent: async () => {},
   removeEvent: async () => {},
@@ -42,11 +46,47 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [events, setEvents] = useState<BndyCalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const [showBandEvents, setShowBandEvents] = useState<boolean>(true);
+  const [userEvents, setUserEvents] = useState<BndyCalendarEvent[]>([]);
+  const [bandEvents, setBandEvents] = useState<BndyCalendarEvent[]>([]);
+
+  // Toggle band events visibility
+  const toggleBandEvents = useCallback(() => {
+    setShowBandEvents(prev => !prev);
+  }, []);
+
+  // Update displayed events based on showBandEvents setting
+  useEffect(() => {
+    // If showing band events, include all events
+    // Otherwise, filter out events with sourceType === 'band'
+    console.log('Toggle state changed:', { showBandEvents, userEventsCount: userEvents.length, bandEventsCount: bandEvents.length });
+    
+    // Create a new array of events with proper styling
+    let filteredEvents = [];
+    
+    // Add user events
+    filteredEvents = [...userEvents];
+    
+    // Add band events if toggle is on
+    if (showBandEvents) {
+      // Make sure band events are blue
+      const styledBandEvents = bandEvents.map(event => ({
+        ...event,
+        color: '#3b82f6' // blue-500
+      }));
+      
+      filteredEvents = [...filteredEvents, ...styledBandEvents];
+    }
+    
+    console.log('Filtered events:', filteredEvents.length);
+    setEvents(filteredEvents);
+  }, [showBandEvents, userEvents, bandEvents]);
 
   // Load events for the current user and their artists
   const loadEvents = useCallback(async () => {
     if (!currentUser) {
-      setEvents([]);
+      setUserEvents([]);
+      setBandEvents([]);
       setIsLoading(false);
       return;
     }
@@ -59,8 +99,14 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const artistIds = currentUserArtists?.map(artist => artist.id) || [];
       
       // Load events for the user and their artists
-      const userEvents = await getUserEvents(currentUser.uid, artistIds);
-      setEvents(userEvents);
+      const allEvents = await getUserEvents(currentUser.uid, artistIds);
+      
+      // Separate user events and band events
+      const userOnlyEvents = allEvents.filter(event => event.sourceType !== 'band');
+      const bandOnlyEvents = allEvents.filter(event => event.sourceType === 'band');
+      
+      setUserEvents(userOnlyEvents);
+      setBandEvents(bandOnlyEvents);
     } catch (err) {
       console.error('Error loading events:', err);
       setError(err instanceof Error ? err : new Error('Failed to load events'));
@@ -133,6 +179,8 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         events,
         isLoading,
         error,
+        showBandEvents,
+        toggleBandEvents,
         createNewEvent,
         updateExistingEvent,
         removeEvent,

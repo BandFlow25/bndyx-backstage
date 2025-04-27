@@ -8,7 +8,7 @@ import Sidebar from './Sidebar';
 import { useAuth } from 'bndy-ui/components/auth';
 // Auth context import logging removed
 import BndyLogo from '../logo/bndylogo';
-import { BndyLoadingScreen } from 'bndy-ui';
+import { BndyLoadingScreen, ErrorBoundary } from 'bndy-ui';
 import { Menu, X } from 'lucide-react';
 
 interface MainLayoutProps {
@@ -131,8 +131,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               </button>
               <button 
                 onClick={() => {
-                  localStorage.removeItem('bndyAuthToken');
-                  window.location.reload();
+                  signOut();
                 }} 
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md">
                 Clear Token & Reload
@@ -171,9 +170,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <div className="flex flex-1 relative">
         
         {/* Sidebar - hidden on mobile unless toggled */}
-        <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 fixed md:static top-0 left-0 h-full z-40 md:z-auto`}>
-          <Sidebar />
-        </div>
+        <ErrorBoundary>
+          <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 fixed md:static top-0 left-0 h-full z-40 md:z-auto`}>
+            <Sidebar />
+          </div>
+        </ErrorBoundary>
         
         {/* Overlay when sidebar is open on mobile */}
         {sidebarOpen && (
@@ -183,9 +184,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           />
         )}
         
-        <main className="flex-1 p-4 md:p-8 overflow-auto bg-white dark:bg-slate-900 w-full pb-16">
-          {children}
-        </main>
+        {/* Main content */}
+        <ErrorBoundary>
+          <main className="flex-1 p-4 md:p-8 overflow-auto bg-white dark:bg-slate-900 w-full pb-16">
+            {children}
+          </main>
+        </ErrorBoundary>
       </div>
       
       {/* Add ThinFooter */}

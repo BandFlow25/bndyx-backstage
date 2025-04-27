@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { BndyDatePicker } from 'bndy-ui';
+import { BndyTimePicker } from './BndyTimePicker';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
 interface DateTimeSectionProps {
@@ -47,23 +48,21 @@ export const DateTimeSection: React.FC<DateTimeSectionProps> = ({
   event,
   today
 }) => {
+
   return (
     <>
-      {/* Date Selection - BndyDatePicker */}
       <div className="mb-4">
-        <label htmlFor="eventDate" style={{ color: isDarkMode ? '#cbd5e1' : '#334155' }} className="block mb-1 font-medium">
-          Date*
+        <label htmlFor="eventDate" className="block mb-1 font-medium text-slate-700 special-event-form-label">
+          Start Date*
         </label>
         <div className="relative">
           <BndyDatePicker
-            date={event?.start ? new Date(event.start) : newEventStartDate || new Date(eventDate)}
+            date={new Date(eventDate)}
             onSelect={(date) => {
               if (date) {
-                const dateStr = date.toISOString().slice(0, 10);
-                setEventDate(dateStr);
-                // If not showing end date, also update end date
+                setEventDate(date.toISOString().slice(0, 10));
                 if (!showEndDate) {
-                  setEndDate(dateStr);
+                  setEndDate(date.toISOString().slice(0, 10));
                 }
               }
             }}
@@ -73,34 +72,35 @@ export const DateTimeSection: React.FC<DateTimeSectionProps> = ({
               month: 'short',
               year: 'numeric'
             }) : 'Select date'}
+            className="w-full"
+            minDate={new Date(today)}
             darkMode={isDarkMode}
-            disablePastDates={!event?.id} // Only disable past dates for new events
+            disablePastDates={true}
             weekStartsOn={1} // Start week on Monday
           />
         </div>
       </div>
-      
-      {/* Multi-day Event Toggle */}
-      <div className="mb-4">
-        <label className="flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            checked={showEndDate}
-            onChange={(e) => setShowEndDate(e.target.checked)}
-            className="mr-2 h-5 w-5 text-orange-500 focus:ring-orange-500 focus:ring-2 focus:ring-offset-0 border-slate-300 dark:border-slate-600 rounded transition-colors"
-          />
-          <span style={{ color: isDarkMode ? '#cbd5e1' : '#334155' }}>Multi-day event</span>
+
+      <div className="mb-4 flex items-center">
+        <input
+          type="checkbox"
+          id="showEndDate"
+          checked={showEndDate}
+          onChange={(e) => setShowEndDate(e.target.checked)}
+          className="w-4 h-4 border border-slate-300 dark:border-slate-600 rounded focus:ring-orange-500 text-orange-500 bg-white dark:bg-slate-700"
+        />
+        <label htmlFor="showEndDate" className="ml-2 text-sm font-medium text-slate-700 dark:text-white">
+          Add end date
         </label>
       </div>
-      
-      {/* End Date (only if multi-day event) - DatePicker */}
+
       {showEndDate && (
         <div className="mb-4">
-          <label htmlFor="endDate" style={{ color: isDarkMode ? '#cbd5e1' : '#334155' }} className="block mb-1 font-medium">
+          <label htmlFor="endDate" className="block mb-1 font-medium text-slate-700 dark:text-white">
             End Date*
           </label>
           <BndyDatePicker
-            date={event?.end ? new Date(event.end) : new Date(endDate)}
+            date={new Date(endDate)}
             onSelect={(date) => {
               if (date) {
                 setEndDate(date.toISOString().slice(0, 10));
@@ -112,121 +112,107 @@ export const DateTimeSection: React.FC<DateTimeSectionProps> = ({
               month: 'short',
               year: 'numeric'
             }) : 'Select end date'}
+            className="w-full"
+            minDate={new Date(eventDate) || new Date(today)}
             darkMode={isDarkMode}
-            minDate={new Date(eventDate)} // End date must be at least the event date
             weekStartsOn={1} // Start week on Monday
           />
         </div>
       )}
-      
-      {/* All Day Toggle */}
-      <div className="mb-4">
-        <label className="flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            checked={isAllDay}
-            onChange={(e) => {
-              setIsAllDay(e.target.checked);
-              if (e.target.checked) {
-                setShowTimeSelection(false);
-              }
-            }}
-            className="mr-2 h-5 w-5 text-orange-500 focus:ring-orange-500 focus:ring-2 focus:ring-offset-0 border-slate-300 dark:border-slate-600 rounded transition-colors"
-          />
-          <span style={{ color: isDarkMode ? '#cbd5e1' : '#334155' }}>All Day Event</span>
+
+      <div className="mb-4 flex items-center">
+        <input
+          type="checkbox"
+          id="isAllDay"
+          checked={isAllDay}
+          onChange={(e) => {
+            setIsAllDay(e.target.checked);
+            // If all day is checked, hide time selection
+            // If unchecked, show time selection (always for band context, optional for user context)
+            setShowTimeSelection(!e.target.checked && (calendarContext === 'band' || showTimeSelection));
+          }}
+          className="w-4 h-4 border border-slate-300 dark:border-slate-600 rounded focus:ring-orange-500 text-orange-500 bg-white dark:bg-slate-700"
+        />
+        <label htmlFor="isAllDay" className="ml-2 text-sm font-medium text-slate-700 dark:text-white">
+          All day event
         </label>
       </div>
-      
-      {/* Time Selection Toggle (only if not all day) */}
-      {!isAllDay && (
-        <div className="mb-4">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showTimeSelection}
-              onChange={(e) => setShowTimeSelection(e.target.checked)}
-              className="mr-2 h-5 w-5 text-orange-500 focus:ring-orange-500 focus:ring-2 focus:ring-offset-0 border-slate-300 dark:border-slate-600 rounded transition-colors"
-            />
-            <span style={{ color: isDarkMode ? '#cbd5e1' : '#334155' }}>Specify time</span>
+
+      {/* Only show the time selection checkbox for user context when not an all-day event */}
+      {!isAllDay && calendarContext === 'user' && (
+        <div className="mb-4 flex items-center">
+          <input
+            type="checkbox"
+            id="showTimeSelection"
+            checked={showTimeSelection}
+            onChange={(e) => setShowTimeSelection(e.target.checked)}
+            className="w-4 h-4 border border-slate-300 dark:border-slate-600 rounded focus:ring-orange-500 text-orange-500 bg-white dark:bg-slate-700"
+          />
+          <label htmlFor="showTimeSelection" className="ml-2 text-sm font-medium text-slate-700 dark:text-white">
+            Add specific times
           </label>
         </div>
       )}
-      
-      {/* Time Selection (only if not all day and time selection is enabled) */}
+
       {!isAllDay && showTimeSelection && (
-        <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="startTime" className="block mb-1 font-medium text-slate-700 dark:text-slate-300">
-              Start Time
-            </label>
-            <div className="relative">
-              <select
-                id="startTime"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md appearance-none
-                  ${isDarkMode 
-                    ? 'bg-slate-700 border-slate-600 text-white focus:border-orange-500' 
-                    : 'bg-white border-slate-300 text-slate-900 focus:border-orange-500'}
-                  focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-colors
-                  h-10 md:h-11 text-base md:text-lg`}
-              >
-                {Array.from({ length: 24 * 4 }).map((_, i) => {
-                  const hour = Math.floor(i / 4);
-                  const minute = (i % 4) * 15;
-                  const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-                  const displayTime = `${hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
-                  return (
-                    <option key={`start-${formattedTime}`} value={formattedTime}>
-                      {displayTime}
-                    </option>
-                  );
-                })}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                <svg className={`w-5 h-5 ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`} 
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </div>
-            </div>
+        <div className="mb-4">
+          <div className="mb-4">
+            <BndyTimePicker
+              time={startTime}
+              onTimeChange={(newTime) => {
+                setStartTime(newTime);
+                
+                // Ensure end time is after start time
+                const [startHours, startMinutes] = newTime.split(':').map(Number);
+                const [endHours, endMinutes] = endTime.split(':').map(Number);
+                
+                const startTotalMinutes = startHours * 60 + startMinutes;
+                const endTotalMinutes = endHours * 60 + endMinutes;
+                
+                // If end time is before or equal to start time, set it to start time + 1 hour
+                if (endTotalMinutes <= startTotalMinutes) {
+                  const newEndHours = (startHours + 1) % 24;
+                  setEndTime(`${String(newEndHours).padStart(2, '0')}:${String(startMinutes).padStart(2, '0')}`);
+                }
+              }}
+              label="Start Time*"
+              darkMode={isDarkMode}
+            />
           </div>
-          <div>
-            <label htmlFor="endTime" className="block mb-1 font-medium text-slate-700 dark:text-slate-300">
-              End Time
+          
+          <div className="mb-4 flex items-center">
+            <input
+              type="checkbox"
+              id="showEndTime"
+              checked={showEndDate || endTime !== startTime}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  // Set end time to start time + 1 hour
+                  const [hours, minutes] = startTime.split(':').map(Number);
+                  const newEndHours = (hours + 1) % 24;
+                  setEndTime(`${String(newEndHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
+                } else {
+                  // Set end time same as start time
+                  setEndTime(startTime);
+                }
+              }}
+              className="w-4 h-4 border border-slate-300 dark:border-slate-600 rounded focus:ring-orange-500 text-orange-500 bg-white dark:bg-slate-700"
+            />
+            <label htmlFor="showEndTime" className="ml-2 text-sm font-medium text-slate-700 dark:text-white">
+              Add end time
             </label>
-            <div className="relative">
-              <select
-                id="endTime"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md appearance-none
-                  ${isDarkMode 
-                    ? 'bg-slate-700 border-slate-600 text-white focus:border-orange-500' 
-                    : 'bg-white border-slate-300 text-slate-900 focus:border-orange-500'}
-                  focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-colors
-                  h-10 md:h-11 text-base md:text-lg`}
-              >
-                {Array.from({ length: 24 * 4 }).map((_, i) => {
-                  const hour = Math.floor(i / 4);
-                  const minute = (i % 4) * 15;
-                  const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-                  const displayTime = `${hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
-                  return (
-                    <option key={`end-${formattedTime}`} value={formattedTime}>
-                      {displayTime}
-                    </option>
-                  );
-                })}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                <svg className={`w-5 h-5 ${isDarkMode ? 'text-slate-300' : 'text-slate-500'}`} 
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </div>
-            </div>
           </div>
+          
+          {(showEndDate || endTime !== startTime) && (
+            <div className="mb-4">
+              <BndyTimePicker
+                time={endTime}
+                onTimeChange={setEndTime}
+                label="End Time*"
+                darkMode={isDarkMode}
+              />
+            </div>
+          )}
         </div>
       )}
     </>

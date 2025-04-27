@@ -532,16 +532,18 @@ const EditArtistPage = () => {
                 id="enableMultipleFormats"
                 checked={enableMultipleFormats}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEnableMultipleFormats(e.target.checked)}
-                label="Enable Multiple Formats/Shows"
-                helpText={enableMultipleFormats ? "You'll be able to create and manage different formats after setup." : undefined}
-                helpIcon={
-                  <div className="group relative">
-                    <InfoIcon className="h-4 w-4 text-slate-500 cursor-help" />
-                    <div className="absolute left-full ml-2 w-64 bg-white dark:bg-slate-700 p-2 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
-                      Multiple formats allow you to create different versions of your artist profile (e.g., full band, acoustic duo, solo shows) with their own bookings, playbooks, and setlists.
-                    </div>
-                  </div>
+                label={
+                  <span className="flex items-center">
+                    Enable Multiple Formats/Shows
+                    <span className="group relative ml-1">
+                      <InfoIcon className="h-4 w-4 text-slate-500 cursor-help" />
+                      <div className="absolute left-full ml-2 w-64 bg-white dark:bg-slate-700 p-2 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
+                        Multiple formats allow you to create different versions of your artist profile (e.g., full band, acoustic duo, solo shows) with their own bookings, playbooks, and setlists.
+                      </div>
+                    </span>
+                  </span>
                 }
+                helperText={enableMultipleFormats ? "You'll be able to create and manage different formats after setup." : undefined}
               />
             </div>
           </div>

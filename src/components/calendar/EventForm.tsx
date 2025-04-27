@@ -82,7 +82,7 @@ export default function EventForm({
   }, [eventDate, showEndDate]);
   // Always default to all-day events for new events
   const [isAllDay, setIsAllDay] = useState(event?.id ? event?.allDay || false : true);
-  const [eventType, setEventType] = useState<EventType>(event?.eventType || (calendarContext === 'user' ? 'available' : 'practice'));
+  const [eventType, setEventType] = useState<EventType>(event?.eventType || (calendarContext === 'user' ? 'unavailable' : 'practice'));
   const [isPublic, setIsPublic] = useState(event?.isPublic || false);
   const [venueId, setVenueId] = useState(event?.venueId || '');
   const [description, setDescription] = useState(event?.description || '');
@@ -161,23 +161,22 @@ export default function EventForm({
   };
 
   return (
-    <div style={{ backgroundColor: isDarkMode ? '#1e293b' : 'white', color: isDarkMode ? 'white' : '#0f172a' }} className={`rounded-lg shadow-lg max-w-2xl w-full mx-auto border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-      <div style={{ backgroundColor: isDarkMode ? '#334155' : '#f8fafc', borderColor: isDarkMode ? '#475569' : '#e2e8f0' }} className="flex items-center justify-between p-4 border-b">
-        <h2 style={{ color: isDarkMode ? 'white' : '#0f172a' }} className="text-xl font-semibold">
+    <div className="bg-white text-slate-900 rounded-lg shadow-lg max-w-2xl w-full mx-auto border border-slate-200 dark:bg-slate-800 dark:text-white dark:border-slate-600 transition-colors duration-300 special-event-form">
+      <div className="bg-slate-50 dark:bg-slate-700 flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-600 transition-colors duration-300 relative special-event-form-header">
+        <h2 className="text-xl font-semibold transition-colors duration-300">
           {event?.id ? 'Edit Event' : 'Create New Event'}
         </h2>
         <button
           type="button"
           onClick={onCancel}
-          style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }}
-          className="hover:opacity-80"
+          className="text-slate-500 dark:text-white hover:opacity-80 transition-colors duration-300"
           aria-label="Close"
         >  
           <X size={20} />
         </button>
       </div>
       
-      <form onSubmit={handleSubmit} style={{ backgroundColor: isDarkMode ? '#1e293b' : 'white' }} className="p-4">
+      <form onSubmit={handleSubmit} className="p-4 bg-white dark:bg-slate-800 transition-colors duration-300 special-event-form-content">
         {formError && (
           <div className="mb-4 p-3 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 rounded-md">
             {formError}
@@ -230,20 +229,18 @@ export default function EventForm({
         {/* Artist context is automatically determined based on where the calendar is accessed from */}
         
         {/* Form Actions */}
-        <div className="flex justify-end space-x-4 mt-6">
+        <div className="flex justify-between mt-6 space-x-4">
           <button
             type="button"
             onClick={onCancel}
-            style={{ backgroundColor: isDarkMode ? '#334155' : '#e2e8f0', color: isDarkMode ? 'white' : '#1e293b' }}
-            className="px-4 py-2 rounded-md hover:opacity-90"
+            className="px-4 py-2 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-white rounded-md hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
             disabled={isSubmitting}
           >
             Cancel
           </button>
           <button
             type="submit"
-            style={{ backgroundColor: '#f97316', color: 'white' }}
-            className="px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-50"
+            className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300 disabled:opacity-50"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Saving...' : event?.id ? 'Update Event' : 'Create Event'}

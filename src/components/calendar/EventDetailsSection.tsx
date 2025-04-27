@@ -21,7 +21,7 @@ export const EventDetailsSection: React.FC<EventDetailsSectionProps> = ({
     <>
       {/* Title */}
       <div className="mb-4">
-        <label htmlFor="title" style={{ color: isDarkMode ? '#cbd5e1' : '#334155' }} className="block mb-1 font-medium">
+        <label htmlFor="title" className="block mb-1 font-medium text-slate-700 dark:text-white">
           Event Title*
         </label>
         <input
@@ -29,15 +29,7 @@ export const EventDetailsSection: React.FC<EventDetailsSectionProps> = ({
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          style={{
-            backgroundColor: isDarkMode ? '#334155' : 'white',
-            borderColor: isDarkMode ? '#475569' : '#d1d5db',
-            color: isDarkMode ? 'white' : '#0f172a',
-            padding: '0.5rem 0.75rem',
-            borderRadius: '0.375rem',
-            width: '100%',
-          }}
-          className="focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-colors"
+          className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-colors"
           placeholder="Enter event title"
           required
         />
@@ -45,22 +37,14 @@ export const EventDetailsSection: React.FC<EventDetailsSectionProps> = ({
       
       {/* Description */}
       <div className="mb-4">
-        <label htmlFor="description" style={{ color: isDarkMode ? '#cbd5e1' : '#334155' }} className="block mb-1 font-medium">
+        <label htmlFor="description" className="block mb-1 font-medium text-slate-700 dark:text-white">
           Description
         </label>
         <textarea
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          style={{
-            backgroundColor: isDarkMode ? '#334155' : 'white',
-            borderColor: isDarkMode ? '#475569' : '#d1d5db',
-            color: isDarkMode ? 'white' : '#0f172a',
-            padding: '0.5rem 0.75rem',
-            borderRadius: '0.375rem',
-            width: '100%',
-          }}
-          className="focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-colors"
+          className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-colors"
           placeholder="Optional description"
           rows={4}
         />

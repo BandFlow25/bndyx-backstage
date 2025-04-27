@@ -27,7 +27,7 @@ interface BndyJwtPayload {
   [key: string]: any; // Allow for additional properties
 }
 
-import { BndyLoadingScreen } from 'bndy-ui';
+import { BndyLoadingScreen, ErrorBoundary, ApiErrorBoundary } from 'bndy-ui';
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -191,7 +191,8 @@ export default function Dashboard() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6">
+      <ErrorBoundary>
+        <div className="container mx-auto px-4 py-6">
         {/* Debug Info - Shown during development to help troubleshoot */}
         {!currentUser && (
           <div className="mb-4 p-4 bg-yellow-800 rounded-lg text-white">
@@ -304,9 +305,12 @@ export default function Dashboard() {
           <EmptyArtistState />
         ) : (
           // Show the new dashboard layout
-          <MyDashboard artists={currentUserArtists} />
+          <ApiErrorBoundary onRetry={() => refreshArtists()}>
+            <MyDashboard artists={currentUserArtists} />
+          </ApiErrorBoundary>
         )}
       </div>
+      </ErrorBoundary>
     </MainLayout>
   );
 }

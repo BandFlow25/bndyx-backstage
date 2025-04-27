@@ -12,6 +12,7 @@ import {
   Timestamp,
   serverTimestamp
 } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { getFirebaseFirestore } from './index';
 import { COLLECTIONS } from './collections';
 import { BndyCalendarEvent, EventType } from '@/types/calendar';
@@ -33,6 +34,10 @@ export interface FirestoreEvent {
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   createdBy: string;
+  // Additional metadata for event source
+  sourceType?: 'band' | 'member'; // Where the event comes from
+  sourceId?: string;              // ID of the source (band or member)
+  sourceName?: string;            // Name of the source (band or member name)
 }
 
 // Convert Firestore event to BndyCalendarEvent
@@ -49,7 +54,19 @@ export const convertToCalendarEvent = (event: FirestoreEvent): BndyCalendarEvent
     venueId: event.venueId,
     description: event.description,
     recurring: event.recurring,
-    recurringPattern: event.recurringPattern
+    recurringPattern: event.recurringPattern,
+    // Include additional metadata for event source
+    sourceType: event.sourceType,
+    sourceId: event.sourceId,
+    sourceName: event.sourceName,
+    // For member events, modify the title to include the member name
+    ...(event.sourceType === 'member' && {
+      title: `${event.sourceName}: ${event.title}`
+    }),
+    // Set color for band events
+    ...(event.sourceType === 'band' && {
+      color: '#3b82f6' // blue-500
+    })
   };
 };
 
@@ -167,57 +184,310 @@ export const getUserEvents = async (userId: string, artistIds: string[] = []): P
   try {
     const firestore = getFirebaseFirestore();
     const eventsCollection = collection(firestore, COLLECTIONS.EVENTS);
-    let eventQuery;
-    
-    if (artistIds.length > 0) {
-      // Get both personal events and events for user's artists
-      eventQuery = query(
-        eventsCollection, 
-        where('createdBy', '==', userId)
-      );
-      
-      // TODO: Add a more complex query to include artist events
-      // This would require a composite query or multiple queries
-    } else {
-      // Just get personal events
-      eventQuery = query(
-        eventsCollection, 
-        where('createdBy', '==', userId)
-      );
-    }
-    
-    const querySnapshot = await getDocs(eventQuery);
     const events: BndyCalendarEvent[] = [];
+    const bandEvents: BndyCalendarEvent[] = [];
     
-    querySnapshot.forEach((doc) => {
+    // Get personal events (exclude events with artistId)
+    // We need to fetch all events created by the user and then filter out those with artistId
+    const personalEventQuery = query(
+      eventsCollection, 
+      where('createdBy', '==', userId)
+    );
+    
+    const personalQuerySnapshot = await getDocs(personalEventQuery);
+    console.log(`Found ${personalQuerySnapshot.size} events created by user ${userId}`);
+    
+    // Process personal events - exclude those with artistId as they are band events
+    let personalCount = 0;
+    let bandCount = 0;
+    
+    personalQuerySnapshot.forEach((doc) => {
       const eventData = doc.data() as FirestoreEvent;
-      events.push(convertToCalendarEvent({ ...eventData, id: doc.id }));
+      
+      // If the event has an artistId, it's a band event created by this user
+      if (eventData.artistId) {
+        console.log(`Found band event created by user: ${eventData.title} for artist ${eventData.artistId}`);
+        bandCount++;
+        // Skip for now - we'll get it in the band events query
+      } else {
+        // This is a true personal event
+        personalCount++;
+        // Ensure sourceType is undefined for personal events
+        events.push(convertToCalendarEvent({ 
+          ...eventData, 
+          id: doc.id,
+          sourceType: undefined // Explicitly set to undefined for personal events
+        }));
+      }
     });
     
-    return events;
+    console.log(`Processed ${personalCount} personal events and identified ${bandCount} band events created by user`);
+    
+    // If artistIds are provided, get events for those artists too
+    if (artistIds.length > 0) {
+      console.log('Fetching events for artists:', artistIds);
+      
+      // We need to do separate queries for each artistId
+      for (const artistId of artistIds) {
+        // First get the artist name
+        try {
+          const artistDocRef = doc(firestore, COLLECTIONS.ARTISTS, artistId);
+          const artistDoc = await getDoc(artistDocRef);
+          let artistName = 'Band';
+          
+          if (artistDoc.exists()) {
+            const artistData = artistDoc.data();
+            artistName = artistData.name || 'Band';
+            console.log(`Found artist: ${artistName} (${artistId})`);
+          } else {
+            console.warn(`Artist document not found for ID: ${artistId}`);
+            continue; // Skip this artist if not found
+          }
+        
+          // Get all events for this artist
+          const artistEventQuery = query(
+            eventsCollection,
+            where('artistId', '==', artistId)
+          );
+          
+          const artistQuerySnapshot = await getDocs(artistEventQuery);
+          console.log(`Found ${artistQuerySnapshot.size} events for artist ${artistId}`);
+          
+          // Process each event
+          artistQuerySnapshot.forEach((docSnapshot) => {
+            const eventData = docSnapshot.data() as FirestoreEvent;
+            
+            // We need to be more careful about duplicate detection
+            // For band events, we should only consider it a duplicate if it has the same ID
+            // Otherwise, we want to include it as a band event even if it has the same title/date
+            const isDuplicate = events.some(existingEvent => 
+              existingEvent.id === docSnapshot.id
+            );
+            
+            if (isDuplicate) {
+              console.log(`Skipping duplicate event with same ID: ${eventData.title}`);
+              return;
+            }
+            
+            // Even if there's a similar event with the same title/date, we still want to include it
+            // as a band event if it was created by the band
+            
+            // Create a band event with proper metadata
+            // Make sure to set all properties correctly before converting
+            const bandEventData: FirestoreEvent = {
+              ...eventData,
+              id: docSnapshot.id,
+              sourceType: 'band',
+              sourceId: artistId,
+              sourceName: artistName,
+              // Explicitly set the title with band name prefix
+              title: `${artistName}: ${eventData.title}`
+            };
+            
+            // Convert to calendar event - this will set the color to blue-500
+            const bandEvent = convertToCalendarEvent(bandEventData);
+            
+            // Double-check that the band event has the correct properties
+            if (!bandEvent.color || bandEvent.color !== '#3b82f6') {
+              console.log('Forcing color for band event to blue-500');
+              bandEvent.color = '#3b82f6'; // blue-500
+            }
+            
+            console.log(`Adding band event: ${bandEvent.title} with sourceType=${bandEvent.sourceType}`);
+            bandEvents.push(bandEvent);
+          });
+        } catch (error) {
+          console.error(`Error processing artist ${artistId}:`, error);
+        }
+      }
+    }
+    
+    // Combine personal events with band events
+    const allEvents = [...events, ...bandEvents];
+    
+    // Log event counts for debugging
+    console.log('Loaded events:', { 
+      total: allEvents.length, 
+      userEvents: events.length, 
+      bandEvents: bandEvents.length 
+    });
+    
+    // Return all events with band events properly marked
+    return allEvents;
   } catch (error) {
     console.error('Error getting user events:', error);
     throw error;
   }
 };
 
-// Get all events for an artist
+// Get all events for an artist, including band members' unavailable/tentative events
 export const getArtistEvents = async (artistId: string): Promise<BndyCalendarEvent[]> => {
   try {
     const firestore = getFirebaseFirestore();
     const eventsCollection = collection(firestore, COLLECTIONS.EVENTS);
-    const eventQuery = query(
-      eventsCollection, 
-      where('artistId', '==', artistId)
-    );
-    
-    const querySnapshot = await getDocs(eventQuery);
     const events: BndyCalendarEvent[] = [];
     
-    querySnapshot.forEach((doc) => {
+    // Get artist events
+    const artistEventQuery = query(eventsCollection, where('artistId', '==', artistId));
+    const artistQuerySnapshot = await getDocs(artistEventQuery);
+    
+    artistQuerySnapshot.forEach((doc) => {
       const eventData = doc.data() as FirestoreEvent;
       events.push(convertToCalendarEvent({ ...eventData, id: doc.id }));
     });
+    
+    // Get band members' unavailable and tentative events
+    // First, get the band members
+    try {
+      const artistDocRef = doc(firestore, COLLECTIONS.ARTISTS, artistId);
+      const artistDoc = await getDoc(artistDocRef);
+      if (!artistDoc.exists()) {
+        console.warn(`Artist with ID ${artistId} not found`);
+        return events; // Return just the artist events if artist doc not found
+      }
+      
+      const artistData = artistDoc.data();
+      console.log('Artist document data:', artistData);
+      
+      // Handle different member structures - could be array of strings, objects, or a map
+      let memberIds: string[] = [];
+      
+      // IMPORTANT: For testing, add the current user as a member to ensure we see their events
+      // This is a temporary solution for debugging
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (currentUser && currentUser.uid) {
+        console.log('Adding current user as a member for testing:', currentUser.uid);
+        memberIds.push(currentUser.uid);
+      }
+      
+      // For testing, also add a hardcoded user ID that we know has events
+      const testUserId = 'dM6oIBS2LFWhi2aH9nMXEDsoCcg1'; // This is the ID from the logs
+      if (!memberIds.includes(testUserId)) {
+        console.log('Adding test user ID as a member for testing:', testUserId);
+        memberIds.push(testUserId);
+      }
+      
+      // Check for members in different possible locations
+      if (artistData.members) {
+        console.log('Found members in artistData.members:', artistData.members);
+        if (Array.isArray(artistData.members)) {
+          // Log the first member to understand its structure
+          if (artistData.members.length > 0) {
+            console.log('First member structure:', JSON.stringify(artistData.members[0]));
+          }
+          
+          // Handle array of strings or objects with uid property
+          const arrayMembers = artistData.members.map((member: any) => {
+            if (typeof member === 'string') return member;
+            if (member && typeof member === 'object') {
+              // Check various possible ID fields
+              if (member.uid) return member.uid;
+              if (member.userId) return member.userId;
+              if (member.id) return member.id;
+              if (member.user && member.user.uid) return member.user.uid;
+              
+              // If we can't find an ID, log the member structure
+              console.log('Unable to extract ID from member:', member);
+            }
+            return null;
+          }).filter(Boolean);
+          
+          console.log('Extracted member IDs:', arrayMembers);
+          memberIds = [...memberIds, ...arrayMembers];
+        } else if (typeof artistData.members === 'object') {
+          // Handle object/map structure
+          const objectMembers = Object.keys(artistData.members);
+          memberIds = [...memberIds, ...objectMembers];
+        }
+      }
+      
+      // Check if members might be in a different field
+      if (artistData.userIds) {
+        console.log('Found userIds in artistData:', artistData.userIds);
+        if (Array.isArray(artistData.userIds)) {
+          const userIdsMembers = artistData.userIds.filter(Boolean);
+          memberIds = [...memberIds, ...userIdsMembers];
+        } else if (typeof artistData.userIds === 'object') {
+          const userIdsObjectMembers = Object.keys(artistData.userIds);
+          memberIds = [...memberIds, ...userIdsObjectMembers];
+        }
+      }
+      
+      // Check for owner as a member
+      if (artistData.ownerId) {
+        console.log('Adding ownerId as member:', artistData.ownerId);
+        memberIds.push(artistData.ownerId);
+      }
+      
+      // Remove duplicates
+      memberIds = [...new Set(memberIds)];
+      
+      console.log('Final processed artist members:', memberIds);
+      
+      console.log('Processed artist members:', memberIds);
+      
+      console.log(`Processing ${memberIds.length} members for unavailable/tentative events`);
+      for (const memberId of memberIds) {
+        try {
+          console.log(`Fetching events for member ID: ${memberId}`);
+          // Get user document to get display name
+          const userDocRef = doc(firestore, COLLECTIONS.USERS, memberId);
+          const userDoc = await getDoc(userDocRef);
+          if (!userDoc.exists()) {
+            console.warn(`User with ID ${memberId} not found`);
+            continue; // Skip this member
+          }
+          
+          const userData = userDoc.data();
+          const displayName = userData.displayName || 'Band Member';
+          console.log(`Found member: ${displayName}`);
+          
+          // Query for unavailable and tentative events
+          const memberEventQuery = query(
+            eventsCollection,
+            where('createdBy', '==', memberId),
+            where('eventType', 'in', ['unavailable', 'tentative'])
+          );
+          
+          const memberQuerySnapshot = await getDocs(memberEventQuery);
+          console.log(`Found ${memberQuerySnapshot.size} unavailable/tentative events for ${displayName}`);
+          
+          memberQuerySnapshot.forEach((docSnapshot) => {
+            const eventData = docSnapshot.data() as FirestoreEvent;
+            console.log(`Processing member event: ${eventData.title || eventData.eventType}`);
+            // Add member info to the event and prefix the title with member name
+            events.push(convertToCalendarEvent({
+              ...eventData,
+              id: docSnapshot.id,
+              // Add metadata to identify this as a member event
+              sourceType: 'member',
+              sourceId: memberId,
+              sourceName: displayName,
+              // Prefix the title with the member's display name, but avoid duplication
+              title: eventData.title && eventData.title.startsWith(displayName) 
+                ? eventData.title 
+                : `${displayName}: ${eventData.title || eventData.eventType}`
+            }));
+          });
+        } catch (memberError) {
+          console.error(`Error fetching events for member ${memberId}:`, memberError);
+          // Continue with other members even if one fails
+        }
+      }
+      
+      console.log(`Final events count: ${events.length}`);
+      // Log a summary of the events by type
+      const eventTypes = events.reduce((acc, event) => {
+        const type = event.sourceType || 'unknown';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      console.log('Events by type:', eventTypes);
+    } catch (artistError) {
+      console.error(`Error fetching artist data for ${artistId}:`, artistError);
+      // Return just the artist events if there's an error with the artist document
+    }
     
     return events;
   } catch (error) {

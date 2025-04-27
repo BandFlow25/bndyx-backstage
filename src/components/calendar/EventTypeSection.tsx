@@ -26,7 +26,7 @@ export const EventTypeSection: React.FC<EventTypeSectionProps> = ({
     <>
       {/* Event Type */}
       <div className="mb-4">
-        <label htmlFor="eventType" style={{ color: isDarkMode ? '#cbd5e1' : '#334155' }} className="block mb-1 font-medium">
+        <label htmlFor="eventType" className="block mb-1 font-medium text-slate-700 dark:text-white">
           Event Type*
         </label>
         <div className="relative">
@@ -34,23 +34,14 @@ export const EventTypeSection: React.FC<EventTypeSectionProps> = ({
             id="eventType"
             value={eventType}
             onChange={(e) => setEventType(e.target.value as EventType)}
-            style={{
-              backgroundColor: isDarkMode ? '#334155' : 'white',
-              borderColor: isDarkMode ? '#475569' : '#d1d5db',
-              color: isDarkMode ? 'white' : '#0f172a',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.375rem',
-              width: '100%',
-              paddingRight: '2.5rem',
-              appearance: 'none'
-            }}
-            className="focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-colors"
+            className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-md appearance-none bg-white dark:bg-slate-700 text-slate-700 dark:text-white"
             required
           >
           {calendarContext === 'user' ? (
             // User context event types
             <>
-              <option value="available">Available</option>
+              {/* Commented out 'Available' option as requested */}
+              {/* <option value="available">Available</option> */}
               <option value="unavailable">Unavailable</option>
               <option value="tentative">Tentative</option>
               <option value="other">Other</option>
@@ -67,7 +58,7 @@ export const EventTypeSection: React.FC<EventTypeSectionProps> = ({
           )}
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
-            <svg style={{ color: isDarkMode ? '#94a3b8' : '#64748b' }} className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg className="h-5 w-5 text-slate-500 dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </div>
@@ -75,22 +66,19 @@ export const EventTypeSection: React.FC<EventTypeSectionProps> = ({
       </div>
 
       {/* Public Event Toggle - Only show for band events */}
-      {calendarContext === 'band' && !isEditMode && (
-        <label className="flex items-center cursor-pointer">
+      {calendarContext === 'band' && (
+        <div className="mt-4 flex items-center">
           <input
             type="checkbox"
+            id="isPublic"
             checked={isPublic}
             onChange={(e) => setIsPublic(e.target.checked)}
-            style={{
-              borderColor: isDarkMode ? '#475569' : '#d1d5db',
-              marginRight: '0.5rem',
-              height: '1.25rem',
-              width: '1.25rem'
-            }}
-            className="text-orange-500 focus:ring-orange-500 focus:ring-2 focus:ring-offset-0 rounded transition-colors"
+            className="w-4 h-4 border border-slate-300 dark:border-slate-600 rounded focus:ring-orange-500 text-orange-500 bg-white dark:bg-slate-700"
           />
-          <span style={{ color: isDarkMode ? '#cbd5e1' : '#334155' }}>Make this event public (visible to fans)</span>
-        </label>
+          <label htmlFor="isPublic" className="ml-2 text-sm font-medium text-slate-700 dark:text-white">
+            Make this event public (visible to fans)
+          </label>
+        </div>
       )}
     </>
   );

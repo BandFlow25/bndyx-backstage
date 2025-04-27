@@ -1,0 +1,176 @@
+/* Custom dark mode overrides for calendar components */
+
+/* Main Calendar Container dark mode overrides */
+.dark .special-calendar-container {
+  background-color: #1e293b !important; /* slate-800 */
+  color: white !important;
+}
+
+/* Card component dark mode overrides */
+.dark [class*='bndy-card'] {
+  background-color: #1e293b !important; /* slate-800 */
+  color: white !important;
+  border-color: #475569 !important; /* slate-600 */
+}
+
+.dark [class*='bndy-card-header'] {
+  background-color: #334155 !important; /* slate-700 */
+  border-color: #475569 !important; /* slate-600 */
+}
+
+.dark [class*='bndy-card-title'] {
+  color: white !important;
+}
+
+.dark [class*='bndy-card-content'] {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+.dark .rbc-calendar {
+  background-color: #1e293b !important; /* slate-800 */
+  color: white !important;
+}
+
+.dark .rbc-month-view {
+  background-color: #1e293b !important; /* slate-800 */
+  border-color: #475569 !important; /* slate-600 */
+}
+
+.dark .rbc-day-bg {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+.dark .rbc-header {
+  background-color: #334155 !important; /* slate-700 */
+  color: white !important;
+  border-color: #475569 !important; /* slate-600 */
+}
+
+.dark .rbc-off-range-bg {
+  background-color: #0f172a !important; /* slate-900 */
+}
+
+.dark .rbc-today {
+  background-color: #334155 !important; /* slate-700 */
+}
+
+/* EventForm dark mode overrides */
+.dark .special-event-form {
+  background-color: #1e293b !important; /* slate-800 */
+  color: white !important;
+  border-color: #475569 !important; /* slate-600 */
+}
+
+.dark .special-event-form-header {
+  background-color: #334155 !important; /* slate-700 */
+  border-color: #475569 !important; /* slate-600 */
+}
+
+.dark .special-event-form-header h2 {
+  color: white !important;
+}
+
+.dark .special-event-form-content {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+.dark .special-event-form button {
+  color: white !important;
+}
+
+.dark .special-event-form label {
+  color: white !important;
+}
+
+.dark .special-event-form input,
+.dark .special-event-form textarea,
+.dark .special-event-form select {
+  background-color: #334155 !important; /* slate-700 */
+  color: white !important;
+  border-color: #475569 !important; /* slate-600 */
+}
+
+/* BndyTimePicker dark mode overrides */
+.dark .special-time-picker {
+  background-color: #1e293b !important; /* slate-800 */
+  color: white !important;
+}
+
+.dark .special-time-picker-header {
+  background-color: #334155 !important; /* slate-700 */
+}
+
+.dark .special-time-picker-clock {
+  background-color: #334155 !important; /* slate-700 */
+}
+
+.dark .special-time-picker-clock-number {
+  color: white !important;
+}
+
+/* Calendar Legend dark mode overrides - match light mode colors */
+.dark [class*='bndy-badge'] {
+  border: none !important;
+}
+
+/* Match the exact colors from light mode */
+.dark [class*='bndy-badge-success'] {
+  background-color: #22c55e !important; /* green-500 */
+  color: #052e16 !important; /* green-950 */
+}
+
+.dark [class*='bndy-badge-danger'] {
+  background-color: #ef4444 !important; /* red-500 */
+  color: #450a0a !important; /* red-950 */
+}
+
+.dark [class*='bndy-badge-warning'] {
+  background-color: #eab308 !important; /* yellow-500 */
+  color: #422006 !important; /* yellow-950 */
+}
+
+.dark [class*='bndy-badge-default'] {
+  background-color: #cbd5e1 !important; /* slate-300 */
+  color: #0f172a !important; /* slate-900 */
+}
+
+.dark [class*='bndy-badge-primary'] {
+  background-color: #3b82f6 !important; /* blue-500 */
+  color: #172554 !important; /* blue-950 */
+}
+
+.dark [class*='bndy-badge-info'] {
+  background-color: #06b6d4 !important; /* cyan-500 */
+  color: #083344 !important; /* cyan-950 */
+}
+
+.dark [class*='bndy-badge-secondary'] {
+  background-color: #a855f7 !important; /* purple-500 */
+  color: #2e1065 !important; /* purple-950 */
+}
+
+.dark [class*='bndy-badge'] + span {
+  color: white !important;
+}
+
+/* Special styling for the calendar card */
+.dark .special-calendar-card {
+  background-color: #1e293b !important; /* slate-800 */
+  border-color: #475569 !important; /* slate-600 */
+}
+
+/* Make sure the legend text is visible */
+.dark .special-calendar-legend {
+  color: white !important;
+}
+
+.dark .special-calendar-legend .flex.items-center {
+  background-color: transparent !important;
+}
+
+/* Ensure most text in the calendar container is visible */
+.dark .special-calendar-container text,
+.dark .special-calendar-container span:not([class*='bndy-badge']),
+.dark .special-calendar-container div:not([class*='bndy-badge']) {
+  color: white !important;
+}

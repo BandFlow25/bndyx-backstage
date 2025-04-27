@@ -8,9 +8,10 @@ import EventForm from './EventForm';
 interface EventDetailsModalProps {
   event: BndyCalendarEvent;
   onClose: () => void;
-  onEdit: (event: BndyCalendarEvent) => Promise<void>;
-  onDelete: (eventId: string) => Promise<void>;
+  onEdit?: (event: BndyCalendarEvent) => Promise<void>;
+  onDelete?: (eventId: string) => Promise<void>;
   isArtistContext?: boolean;
+  calendarContext?: 'user' | 'band';
 }
 
 export default function EventDetailsModal({
@@ -18,7 +19,8 @@ export default function EventDetailsModal({
   onClose,
   onEdit,
   onDelete,
-  isArtistContext = false
+  isArtistContext = false,
+  calendarContext = 'band'
 }: EventDetailsModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -47,7 +49,9 @@ export default function EventDetailsModal({
     try {
       setIsSubmitting(true);
       setError(null);
-      await onEdit(updatedEvent);
+      if (onEdit) {
+        await onEdit(updatedEvent);
+      }
       setIsEditing(false);
     } catch (err) {
       console.error('Error updating event:', err);
@@ -62,7 +66,9 @@ export default function EventDetailsModal({
     try {
       setIsSubmitting(true);
       setError(null);
-      await onDelete(event.id);
+      if (onDelete) {
+        await onDelete(event.id);
+      }
       onClose();
     } catch (err) {
       console.error('Error deleting event:', err);
@@ -72,23 +78,32 @@ export default function EventDetailsModal({
     }
   };
 
-  // Get background color based on event type
+  // Get background color based on event type and context
   const getEventColor = () => {
+    // Force band events to be blue in the user context
+    if (event.sourceType === 'band') {
+      return 'bg-blue-500'; // Brand color for band events in user context
+    }
+    
+    // Otherwise use the color based on event type
     switch (event.eventType) {
+      // Band context colors - using brand colors
       case 'gig':
-        return 'bg-green-500';
+        return 'bg-orange-500'; // Brand color for gigs
       case 'practice':
-        return 'bg-blue-500';
+        return 'bg-orange-500'; // Brand color for practice
       case 'meeting':
-        return 'bg-purple-500';
+        return 'bg-orange-500'; // Brand color for meetings
       case 'recording':
-        return 'bg-pink-500';
+        return 'bg-orange-500'; // Brand color for recording
+      
+      // User context colors
       case 'unavailable':
         return 'bg-red-500';
-      case 'available':
-        return 'bg-lime-500';
+      case 'tentative':
+        return 'bg-amber-500';
       default:
-        return 'bg-orange-500';
+        return 'bg-orange-500'; // Default to brand color
     }
   };
 
@@ -112,8 +127,8 @@ export default function EventDetailsModal({
   // If in delete confirmation mode
   if (isDeleting) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-md w-full mx-auto p-6">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-md w-full mx-auto p-6 my-8 special-event-form special-event-form-content">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
             Delete Event
           </h2>
@@ -133,7 +148,7 @@ export default function EventDetailsModal({
               type="button"
               onClick={() => setIsDeleting(false)}
               className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md
-                       text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                       text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700"
               disabled={isSubmitting}
             >
               Cancel
@@ -156,8 +171,12 @@ export default function EventDetailsModal({
   // Default view - event details
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-md w-full mx-auto">
-        <div className={`${getEventColor()} p-4 rounded-t-lg`}>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-md w-full mx-auto special-event-form special-event-form-content">
+        {/* Use brand colors for the header */}
+        <div 
+          className={`p-4 rounded-t-lg ${getEventColor()}`}
+          style={event.sourceType === 'band' ? { backgroundColor: '#3b82f6' } : undefined}
+        >
           <div className="flex justify-between items-start">
             <h2 className="text-xl font-semibold text-white">{event.title}</h2>
             <button
@@ -170,6 +189,7 @@ export default function EventDetailsModal({
           </div>
           <div className="mt-1 text-white/90">
             {event.eventType.charAt(0).toUpperCase() + event.eventType.slice(1)}
+            {/* Don't show a badge for band events */}
           </div>
         </div>
         
@@ -262,26 +282,39 @@ export default function EventDetailsModal({
           </div>
           
           {/* Actions */}
-          <div className="flex justify-end space-x-3 mt-6">
-            <button
-              type="button"
-              onClick={() => setIsDeleting(true)}
-              className="px-3 py-1.5 border border-red-300 dark:border-red-800 rounded-md
-                       text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30
-                       flex items-center"
-            >
-              <Trash size={16} className="mr-1" />
-              Delete
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="px-3 py-1.5 bg-orange-500 text-white rounded-md hover:bg-orange-600
-                       flex items-center"
-            >
-              <Edit size={16} className="mr-1" />
-              Edit
-            </button>
+          <div className="flex space-x-3 mt-6">
+            {/* Check if this is a cross-context event */}
+            {(event.sourceType === 'band' && calendarContext === 'user') || 
+             (event.sourceType === 'member' && calendarContext === 'band') ? (
+              // For cross-context events, only show OK button
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-md hover:bg-slate-200 dark:hover:bg-slate-600 w-full justify-center"
+              >
+                OK
+              </button>
+            ) : (
+              // For regular events, show edit and delete buttons
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-md hover:bg-slate-200 dark:hover:bg-slate-600"
+                >
+                  <Edit size={16} className="mr-2" />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsDeleting(true)}
+                  className="flex items-center px-4 py-2 bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 rounded-md hover:bg-red-200 dark:hover:bg-red-800"
+                >
+                  <Trash size={16} className="mr-2" />
+                  Delete
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

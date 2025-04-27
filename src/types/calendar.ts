@@ -1,38 +1,50 @@
-// Local copy of calendar types
-// This should be kept in sync with bndy-types/src/event.ts and bndy-ui/src/types/calendar.ts
+// Re-export calendar types from bndy-types package
+// This file now serves as a compatibility layer during type migration
+// See docs/TYPE_MIGRATION.md for details
 
-// Calendar event types
-// User context event types: available, unavailable, tentative, other
-// Band context event types: gig, practice, recording, meeting, other
-export type EventType = 
-  // User context
-  'available' | 'unavailable' | 'tentative' | 
-  // Band context
-  'gig' | 'practice' | 'recording' | 'meeting' | 
-  // Both contexts
-  'other';
+// Import types from bndy-types
+import { EventType as SharedEventType, BndyCalendarEvent as SharedBndyCalendarEvent } from 'bndy-types';
+
+// Re-export the types
+// This ensures all existing code continues to work while we transition to using bndy-types directly
+export type EventType = SharedEventType;
 
 /**
  * BndyCalendarEvent - Used for the calendar component
- * This extends the basic Event interface with additional properties needed for calendar display
+ * This extends the shared type from bndy-types with additional properties
  */
-export interface BndyCalendarEvent {
-  id: string;
-  title: string;           // Display title for the event
-  start: Date;             // Start date/time
-  end: Date;               // End date/time
-  allDay?: boolean;        // Whether this is an all-day event
-  eventType: EventType;    // Type of event (gig, practice, etc.)
-  isPublic: boolean;       // Whether this event is public (shown on bndy.live)
-  
-  // References
-  artistId?: string;       // Associated artist/band ID (if applicable)
-  artistName?: string;     // Artist/band name for display
-  venueId?: string;        // Associated venue ID (required for gigs)
-  
-  // Additional details
-  description?: string;    // Event description
-  color?: string;          // Optional custom color override
-  recurring?: boolean;     // Whether this is a recurring event
-  recurringPattern?: string; // Pattern for recurring events
+export interface BndyCalendarEvent extends SharedBndyCalendarEvent {
+  // Source information for cross-context events
+  sourceType?: 'band' | 'member';
+  sourceId?: string;
+  sourceName?: string;
 }
+
+// Type validation to ensure compatibility
+// This code doesn't run, it's just for TypeScript to verify type compatibility
+type _TypeCheck = {
+  // Verify EventType includes all required variants
+  eventTypeCheck: SharedEventType extends 'available' | 'unavailable' | 'tentative' | 'gig' | 'practice' | 'recording' | 'meeting' | 'other' ? true : never;
+  
+  // Verify BndyCalendarEvent has all required properties
+  calendarEventCheck: SharedBndyCalendarEvent extends {
+    id: string;
+    title: string;
+    start: Date;
+    end: Date;
+    eventType: EventType;
+    isPublic: boolean;
+    allDay?: boolean;
+    artistId?: string;
+    artistName?: string;
+    venueId?: string;
+    description?: string;
+    color?: string;
+    recurring?: boolean;
+    recurringPattern?: string;
+    // Source information for cross-context events
+    sourceType?: 'band' | 'member';
+    sourceId?: string;
+    sourceName?: string;
+  } ? true : never;
+};

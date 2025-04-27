@@ -12,7 +12,8 @@ import { useTheme } from '@/lib/context/theme-context';
 import EventForm from '@/components/calendar/EventForm';
 import EventDetailsModal from '@/components/calendar/EventDetailsModal';
 import Link from 'next/link';
-import { BndyCalendar } from 'bndy-ui';
+import { ErrorBoundary, ApiErrorBoundary } from 'bndy-ui';
+import ArtistCalendarWrapper from '@/components/calendar/ArtistCalendarWrapper';
 
 export default function ArtistCalendarPage() {
   const params = useParams();
@@ -41,24 +42,25 @@ export default function ArtistCalendarPage() {
     }
   }, [artistId, currentArtist, setCurrentArtistById]);
 
-  // Load events for this specific artist
-  useEffect(() => {
-    const loadArtistEvents = async () => {
-      if (!currentArtist || !artistId) return;
-      
-      try {
-        setIsLoadingArtistEvents(true);
-        setArtistEventsError(null);
-        const events = await getEventsForArtist(artistId);
-        setArtistEvents(events);
-      } catch (err) {
-        console.error('Error loading artist events:', err);
-        setArtistEventsError(err instanceof Error ? err : new Error('Failed to load artist events'));
-      } finally {
-        setIsLoadingArtistEvents(false);
-      }
-    };
+  // Function to load events for this specific artist
+  const loadArtistEvents = async () => {
+    if (!currentArtist || !artistId) return;
     
+    try {
+      setIsLoadingArtistEvents(true);
+      setArtistEventsError(null);
+      const events = await getEventsForArtist(artistId);
+      setArtistEvents(events);
+    } catch (err) {
+      console.error('Error loading artist events:', err);
+      setArtistEventsError(err instanceof Error ? err : new Error('Failed to load artist events'));
+    } finally {
+      setIsLoadingArtistEvents(false);
+    }
+  };
+  
+  // Load events when component mounts or dependencies change
+  useEffect(() => {
     loadArtistEvents();
   }, [artistId, currentArtist, getEventsForArtist]);
 
@@ -189,7 +191,8 @@ export default function ArtistCalendarPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6">
+      <ErrorBoundary>
+        <div className="container mx-auto px-4 py-6">
         {/* Back to Artist Dashboard */}
         <div className="mb-4">
           <Link 
@@ -202,7 +205,7 @@ export default function ArtistCalendarPage() {
         </div>
 
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{currentArtist.name} Calendar</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{currentArtist.name}'s Calendar</h1>
           <button
             onClick={handleCreateEvent}
             className="flex items-center px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
@@ -221,10 +224,7 @@ export default function ArtistCalendarPage() {
 
         <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm border border-slate-200 dark:border-slate-700">
           <div className="mb-6">
-            <h2 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Band Calendar</h2>
-            <p className="text-sm text-[var(--text-secondary)] mb-4">
-              Manage {currentArtist.name}'s events and see band member availability.
-            </p>
+       
             
             <div className="flex flex-wrap gap-4 mb-4">
               <div className="flex items-center">
@@ -249,51 +249,54 @@ export default function ArtistCalendarPage() {
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-4 p-3 bg-slate-50 dark:bg-slate-700/30 rounded-lg">
-              <h3 className="w-full text-sm font-medium text-[var(--text-secondary)] mb-1">Member Availability:</h3>
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-[#4caf50] mr-2"></div>
-                <span className="text-sm text-[var(--text-secondary)]">Available</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-[#f44336] mr-2"></div>
-                <span className="text-sm text-[var(--text-secondary)]">Unavailable</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-[#ffc107] mr-2"></div>
-                <span className="text-sm text-[var(--text-secondary)]">Tentative</span>
-              </div>
-            </div>
+            {/* Member unavailability is shown directly on the calendar with member names */}
           </div>
 
           {/* Calendar Component */}
-          <div className="rounded-lg overflow-hidden">
-            {isLoadingArtistEvents ? (
-              <div className="h-[500px] flex items-center justify-center bg-slate-50 dark:bg-slate-700/50">
-                <Loader2 size={36} className="animate-spin text-orange-500" />
-              </div>
-            ) : artistEvents.length === 0 ? (
-              <div className="h-[500px] flex items-center justify-center bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                <div className="text-center">
-                  <Users className="h-12 w-12 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
-                  <p className="text-[var(--text-secondary)] mb-2">No events yet</p>
-                  <p className="text-[var(--text-secondary)] text-sm">
-                    Click "Add Event" to create your first event for {currentArtist.name}
-                  </p>
+          <ApiErrorBoundary onRetry={() => loadArtistEvents()}>
+            <div className="rounded-lg overflow-hidden">
+              {isLoadingArtistEvents ? (
+                <div className="h-[500px] flex items-center justify-center bg-slate-50 dark:bg-slate-700/50">
+                  <Loader2 size={36} className="animate-spin text-orange-500" />
                 </div>
-              </div>
-            ) : (
-              <div className="h-[600px]">
-                <BndyCalendar
-                  events={artistEvents}
-                  isDarkMode={isDarkMode}
-                  onSelectEvent={handleSelectEvent}
-                  onSelectSlot={handleSelectSlot}
-                  readOnly={false}
-                />
-              </div>
-            )}
-          </div>
+              ) : artistEventsError ? (
+                <div className="h-[500px] flex items-center justify-center bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <div className="text-center">
+                    <p className="text-red-600 dark:text-red-400 mb-2">Error loading events</p>
+                    <button 
+                      onClick={() => loadArtistEvents()}
+                      className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              ) : artistEvents.length === 0 ? (
+                <div className="h-[500px] flex items-center justify-center bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                  <div className="text-center">
+                    <Users className="h-12 w-12 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
+                    <p className="text-[var(--text-secondary)] mb-2">No events yet</p>
+                    {currentArtist && (
+                      <p className="text-[var(--text-secondary)] text-sm">
+                        Click "Add Event" to create your first event for {currentArtist.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[600px]">
+                  <ArtistCalendarWrapper
+                    events={artistEvents}
+                    isDarkMode={isDarkMode}
+                    onSelectEvent={handleSelectEvent}
+                    onSelectSlot={handleSelectSlot}
+                    readOnly={false}
+                  />
+                </div>
+              )}
+            </div>
+          </ApiErrorBoundary>
+
         </div>
 
         {/* Event Form Modal */}
@@ -333,12 +336,14 @@ export default function ArtistCalendarPage() {
               setShowEventDetails(false);
               setSelectedEvent(null);
             }}
-            onEdit={handleEventUpdate}
-            onDelete={handleEventDelete}
+            onEdit={selectedEvent.sourceType !== 'member' ? handleEventUpdate : undefined}
+            onDelete={selectedEvent.sourceType !== 'member' ? handleEventDelete : undefined}
             isArtistContext={true}
+            calendarContext="band"
           />
         )}
       </div>
+      </ErrorBoundary>
     </MainLayout>
   );
 }
