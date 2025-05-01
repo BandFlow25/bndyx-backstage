@@ -3,17 +3,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { useArtist } from '@/lib/context/artist-context';
 import { ArtistService } from '@/lib/services/artist-service';
 import { Artist, MusicGenre, ArtistMember, getAvailableMusicGenres } from 'bndy-types';
 import { validateSocialMediaUrl } from '@/lib/utils/social-media-utils';
 import { Music, MapPin, Check, X, Upload, InfoIcon } from 'lucide-react';
 import { PlaceLookup } from 'bndy-ui';
-import { RadioButton } from 'bndy-ui/components/ui/RadioButton';
-import { Checkbox } from 'bndy-ui/components/ui/Checkbox';
-import { SocialMediaInput } from 'bndy-ui/components/ui/SocialMediaInput';
-import type { SocialMediaLink } from 'bndy-ui/components/ui/SocialMediaInput';
+import { RadioButton } from 'bndy-ui';
+import { Checkbox } from 'bndy-ui';
+import { SocialMediaInput } from 'bndy-ui';
+import type { SocialMediaLink } from 'bndy-ui';
 import Link from 'next/link';
 import Image from 'next/image';
 

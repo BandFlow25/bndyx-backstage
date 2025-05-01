@@ -379,8 +379,6 @@ This to-do list provides a strict technical build task list to construct the bnd
   - Removed implementation details (e.g., schema fields, styling, versions).
   - Added references to PRD, style guide, auth flow, and deployment architecture.
   - Added test cases for clarity.
-- **v1.3**: Updated May 2025:
-  - Corrected domain references from `live.bndy.co.uk` to `bndy.live` throughout (Phases 1.4, 4, 8.1, etc.).
 - **v1.4**: Updated May 2025:
   - Added Web Share API task (Phase 4.8).
   - Added setlist save/share/export task (Phase 5.2).

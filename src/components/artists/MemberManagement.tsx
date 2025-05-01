@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Artist, ArtistMember } from 'bndy-types';
 import { ArtistService } from '@/lib/services/artist-service';
 import { useArtist } from '@/lib/context/artist-context';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { Users, UserPlus, Mail, X, Check, Shield, Star } from 'lucide-react';
 
 interface MemberManagementProps {

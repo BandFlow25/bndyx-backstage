@@ -82,9 +82,7 @@ export default function EventForm({
       return eventDate;
     }
   });
-  const [showTimeSelection, setShowTimeSelection] = useState(
-    calendarContext === 'band' || (event && !event.allDay) || false
-  );
+  const [showTimeSelection, setShowTimeSelection] = useState(false);
   
   // Helper function to round time to nearest 15 minutes
   function roundToNearestQuarterHour(date: Date): string {
@@ -224,7 +222,7 @@ export default function EventForm({
         </button>
       </div>
       
-      <form onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()} className="p-4 bg-white dark:bg-slate-800 transition-colors duration-300 special-event-form-content">
+      <form onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()} className="p-4 bg-white dark:bg-slate-800 transition-colors duration-300 special-event-form-content" noValidate>
         {formError && (
           <div className="mb-4 p-3 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 rounded-md">
             {formError}

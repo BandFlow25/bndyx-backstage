@@ -3,7 +3,7 @@ const path = require('path');
 
 const nextConfig = {
   webpack: (config, { isServer }) => {
-    // This helps with npm link resolution issues
+    // This helps with npm link resolution issues 
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,

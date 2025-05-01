@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import './calendar-dark-mode.css'; // Import custom dark mode styles
+import './calendar-dark-mode.css'; // Import custom dark mode styles 
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { BndyCalendarEvent, EventType } from '@/types/calendar';
 import { Loader2 } from 'lucide-react';
 import { useArtist } from '@/lib/context/artist-context';
@@ -159,7 +159,15 @@ export default function UserCalendarPage() {
         )}
 
         {/* Calendar Container */}
-        <ApiErrorBoundary onRetry={() => window.location.reload()}>
+        <ApiErrorBoundary 
+          onRetry={() => window.location.reload()}
+          fallbackComponent={
+            <div className="p-4 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 rounded-lg">
+              <p className="font-medium">Error loading calendar events</p>
+              <p>An error occurred while fetching calendar data</p>
+            </div>
+          }
+        >
           {/* Process events to ensure band events are blue */}
           {(() => {
             // Create a copy of events with band events colored blue

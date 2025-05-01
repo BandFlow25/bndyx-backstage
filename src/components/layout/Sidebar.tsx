@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { useArtist } from '@/lib/context/artist-context';
 import BndyLogo from '../logo/bndylogo';
 import { Home, Music, User, Calendar, BookOpen, ListMusic, FileMusic, Theater, Users, Search, ChevronDown, ChevronUp, LogOut } from 'lucide-react';

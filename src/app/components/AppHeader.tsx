@@ -4,7 +4,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { BndyLogo } from 'bndy-ui';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
+import { UserProfile } from 'bndy-types';
 import { Menu, X, LogIn, LogOut, User, Bug, X as CloseIcon } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode';
 
@@ -25,24 +26,30 @@ export function AppHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDebugPopup, setShowDebugPopup] = useState(false);
   const [tokenInfo, setTokenInfo] = useState<DecodedToken | null>(null);
-  const { currentUser, signOut } = useAuth();
+  const { currentUser, signOut, getAuthToken } = useAuth() as {
+    currentUser: UserProfile | null;
+    signOut: () => Promise<void>;
+    getAuthToken: () => Promise<string | null>;
+  };
   
   // Only admin users should see the debug icon
   // Using type assertion to avoid TypeScript errors
-  const isAdmin = currentUser?.roles?.includes('admin' as any) || false;
+  const isAdmin = currentUser?.roles?.includes('admin') || false;
   const hasGodMode = Array.isArray(currentUser?.roles) && 
-    (currentUser?.roles?.includes('GODMODE' as any) || (currentUser as any)?.godMode === true);
+    (currentUser?.roles?.includes('GODMODE') || false);
   const showDebugIcon = isAdmin || hasGodMode;
   
   // Load token info when debug popup is opened
   useEffect(() => {
     if (showDebugPopup) {
       try {
-        const token = localStorage.getItem('bndyAuthToken');
-        if (token) {
-          const decoded = jwtDecode<DecodedToken>(token);
-          setTokenInfo(decoded);
-        }
+        // Use getAuthToken from useAuth hook instead of direct localStorage access
+        getAuthToken().then((token: string | null) => {
+          if (token) {
+            const decoded = jwtDecode<DecodedToken>(token);
+            setTokenInfo(decoded);
+          }
+        });
       } catch (error) {
         console.error('Error decoding token:', error);
         setTokenInfo(null);
@@ -76,7 +83,7 @@ export function AppHeader() {
               Discover
             </Link>
             <Link 
-              href="https://my.bndy.co.uk" 
+              href="https://backstage.bndy.co.uk" 
               className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-orange-500"
             >
               Manage
@@ -166,7 +173,7 @@ export function AppHeader() {
               Discover
             </Link>
             <Link 
-              href="https://my.bndy.co.uk" 
+              href="https://backstage.bndy.co.uk" 
               className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-orange-500"
               onClick={() => setIsMenuOpen(false)}
             >
@@ -274,8 +281,9 @@ export function AppHeader() {
                   
                   <div className="mt-4 flex justify-end gap-2">
                     <button 
-                      onClick={() => {
-                        localStorage.removeItem('bndyAuthToken');
+                      onClick={async () => {
+                        // Use signOut from useAuth hook instead of direct localStorage access
+                        await signOut();
                         window.location.reload();
                       }}
                       className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"

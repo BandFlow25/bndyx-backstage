@@ -10,7 +10,7 @@ import { getCurrentUserProfile, updateCurrentUserProfile } from '@/lib/services/
 import { User, Music, MapPin, Upload, Check } from 'lucide-react';
 import Link from 'next/link';
 
-// Wrap the profile page content with ToastProvider
+// Wrap the profile page content with ToastProvider 
 function ProfileContent() {
   const { currentUser } = useAuth();
   const router = useRouter();

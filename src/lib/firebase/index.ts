@@ -12,7 +12,7 @@ let firestore: Firestore;
 let storage: Storage;
 
 /**
- * Initialize Firebase client SDK for bndy-core
+ * Initialize Firebase client SDK for bndy-backstage
  * This ensures we have a single instance of Firebase throughout the application
  */
 export const initializeFirebase = () => {

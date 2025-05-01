@@ -20,7 +20,7 @@ interface ThemeAwareComponentProps {
  * A template for creating theme-aware components
  * 
  * This component demonstrates best practices for implementing
- * theme support in bndy-core components.
+ * theme support in bndy-backstage components.
  */
 const ThemeAwareComponent: React.FC<ThemeAwareComponentProps> = ({
   children,

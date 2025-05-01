@@ -5,20 +5,10 @@
 // Import types from bndy-types
 import { EventType as SharedEventType, BndyCalendarEvent as SharedBndyCalendarEvent } from 'bndy-types';
 
-// Re-export the types
+// Re-export the types directly from bndy-types
 // This ensures all existing code continues to work while we transition to using bndy-types directly
 export type EventType = SharedEventType;
-
-/**
- * BndyCalendarEvent - Used for the calendar component
- * This extends the shared type from bndy-types with additional properties
- */
-export interface BndyCalendarEvent extends SharedBndyCalendarEvent {
-  // Source information for cross-context events
-  sourceType?: 'band' | 'member';
-  sourceId?: string;
-  sourceName?: string;
-}
+export type BndyCalendarEvent = SharedBndyCalendarEvent;
 
 // Type validation to ensure compatibility
 // This code doesn't run, it's just for TypeScript to verify type compatibility

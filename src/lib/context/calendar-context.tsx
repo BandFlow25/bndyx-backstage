@@ -1,16 +1,13 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { useArtist } from './artist-context';
 import { BndyCalendarEvent, EventType } from '@/types/calendar';
-import { 
-  createEvent, 
-  updateEvent, 
-  deleteEvent, 
-  getUserEvents, 
-  getArtistEvents 
-} from '@/lib/firebase/events';
+// Import from the new modular structure
+import { createEvent, updateEvent, deleteEvent } from '@/lib/firebase/events/core-operations';
+import { getUserEvents } from '@/lib/firebase/events/user-events';
+import { getArtistEvents } from '@/lib/firebase/events/artist-events';
 
 interface CalendarContextType {
   events: BndyCalendarEvent[];

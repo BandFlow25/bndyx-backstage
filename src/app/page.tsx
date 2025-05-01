@@ -8,6 +8,7 @@ import { Music, MapPin, Calendar, Users, Star, ExternalLink, Sparkles, MessageCi
 import Link from 'next/link';
 import { personas, PersonaType } from './lib/personas';
 import { useRouter } from 'next/navigation';
+import { useAuth } from 'bndy-ui';
 
 // Define the JWT payload interface to match our token structure
 interface BndyJwtPayload {
@@ -37,6 +38,8 @@ export default function Home() {
   const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
   const currentPersona = personas[activePersona];
   const router = useRouter();
+  // Move useAuth hook to the top level of the component
+  const { currentUser, getAuthToken } = useAuth();
   
   // Performance timing helper
   const logPerf = (step: string, startTime: number) => {
@@ -55,7 +58,8 @@ export default function Home() {
     const urlToken = params.get('token');
     if (urlToken) {
       // Auth flow logging removed
-      localStorage.setItem('bndyAuthToken', urlToken);
+      // We should not directly access localStorage per the Single Auth Context Rule
+      // Instead, the token should be handled by the AuthContext in bndy-ui
       
       // Clean up URL
       logPerf('before_url_cleanup', startTime);
@@ -73,29 +77,33 @@ export default function Home() {
     }
     
     logPerf('url_token_check_complete', startTime);
-    const token = localStorage.getItem('bndyAuthToken');
+    // useAuth already called at the top level of the component
     const debugInfoElement = document.getElementById('auth-debug-info');
     
     // Update debug panel with initial state
     if (debugInfoElement) {
       debugInfoElement.textContent = JSON.stringify({
-        tokenExists: !!token,
+        userExists: !!currentUser,
         timestamp: new Date().toISOString(),
-        message: token ? 'Token found in localStorage, decoding...' : 'No token found in localStorage'
+        message: currentUser ? 'User is authenticated' : 'No authenticated user found'
       }, null, 2);
     }
     
-    if (token) {
+    if (currentUser) {
       try {
-        // Log token details (without exposing sensitive parts)
-        const tokenStart = token.substring(0, 10);
-        const tokenEnd = token.substring(token.length - 10);
-        // Token logging removed
-        
-        // Import jwtDecode dynamically to inspect token contents
-        import('jwt-decode').then(({ jwtDecode }) => {
-          try {
-            const decoded = jwtDecode<BndyJwtPayload>(token);
+        // Get the token using the proper useAuth hook method 
+        getAuthToken().then(token => {
+          if (!token) return;
+          
+          // Log token details (without exposing sensitive parts)
+          const tokenStart = token.substring(0, 10);
+          const tokenEnd = token.substring(token.length - 10);
+          // Token logging removed
+          
+          // Import jwtDecode dynamically to inspect token contents
+          import('jwt-decode').then(({ jwtDecode }) => {
+            try {
+              const decoded = jwtDecode<BndyJwtPayload>(token);
             
             // Log the complete decoded token for debugging
             // Token logging removed
@@ -138,7 +146,7 @@ export default function Home() {
             // Check if token is expired
             if (decoded.exp * 1000 < Date.now()) {
               // Token expired logging removed
-              localStorage.removeItem('bndyAuthToken');
+              // Use signOut from useAuth instead of direct localStorage access
               
               if (debugInfoElement) {
                 debugInfoElement.textContent = JSON.stringify({
@@ -154,7 +162,7 @@ export default function Home() {
             }
           } catch (decodeError) {
             // Error handling silenced
-            localStorage.removeItem('bndyAuthToken');
+            // Use signOut from useAuth instead of direct localStorage access
             
             if (debugInfoElement) {
               debugInfoElement.textContent = JSON.stringify({
@@ -165,6 +173,7 @@ export default function Home() {
               }, null, 2);
             }
           }
+        });
         });
       } catch (error) {
         console.error('HOME PAGE: Error processing token:', error);
@@ -423,7 +432,7 @@ export default function Home() {
               </a>
               
               <a 
-                href="https://my.bndy.co.uk" 
+                href="https://backstage.bndy.co.uk" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`px-8 py-3 rounded-full bg-transparent ${activePersona === 'band' ? 'hover:bg-orange-600' : activePersona === 'venue' ? 'hover:bg-blue-600' : 'hover:bg-green-600'} text-white border border-white font-medium text-lg transition-all inline-flex items-center justify-center`}

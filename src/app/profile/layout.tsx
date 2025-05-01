@@ -1,10 +1,10 @@
 'use client';
 
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { BndySpinner } from 'bndy-ui';
-import { AuthProvider } from 'bndy-ui/components/auth';
+import { AuthProvider } from 'bndy-ui';
 import { GoogleMapsProvider } from 'bndy-ui';
 
 type ProfileLayoutProps = {

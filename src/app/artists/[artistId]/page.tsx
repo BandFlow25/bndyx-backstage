@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { BndySpinner, ErrorBoundary, ApiErrorBoundary } from 'bndy-ui';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { useArtist } from '@/lib/context/artist-context';
 import { ArtistService } from '@/lib/services/artist-service';
-import { Artist, ArtistMember } from 'bndy-types';
+import { Artist, ArtistMember, UserProfile } from 'bndy-types';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
@@ -18,7 +18,7 @@ import QuickLinks from '@/components/artists/backstage/QuickLinks';
 const ArtistDetailPage = () => {
   const params = useParams();
   const artistId = params.artistId as string;
-  const { currentUser } = useAuth();
+  const { currentUser } = useAuth() as { currentUser: UserProfile | null };
   const { refreshArtists } = useArtist();
   const router = useRouter();
   const [artist, setArtist] = useState<Artist | null>(null);
@@ -82,7 +82,7 @@ const ArtistDetailPage = () => {
         <div className="max-w-6xl mx-auto">
           {loading ? (
             <div className="flex justify-center items-center h-64">
-              <BndySpinner />
+              <BndySpinner label="Loading artist details" />
             </div>
           ) : error ? (
             <div className="bg-red-900/20 dark:bg-red-900/30 border border-red-900 text-red-700 dark:text-red-200 p-4 rounded-lg">
@@ -97,7 +97,14 @@ const ArtistDetailPage = () => {
           ) : artist ? (
             <>
               {/* Artist Profile Header - Using the new component */}
-              <ApiErrorBoundary onRetry={() => window.location.reload()}>
+              <ApiErrorBoundary 
+                onRetry={() => window.location.reload()} 
+                fallbackComponent={
+                  <div className="p-4 bg-red-100 text-red-800 rounded-md">
+                    <p>Error loading artist data: An error occurred when loading the artist profile</p>
+                  </div>
+                }
+              >
                 <ArtistProfileHeader 
                   artist={artist} 
                   artistId={artistId} 

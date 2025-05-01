@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { useArtist } from '@/lib/context/artist-context';
 import { BndySpinner } from 'bndy-ui';
 import ArtistCard from '@/components/artists/ArtistCard';

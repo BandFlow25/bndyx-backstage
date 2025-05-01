@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import '../../../calendar/calendar-dark-mode.css';
 import { useParams, useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { BndyCalendarEvent, EventType } from '@/types/calendar';
 import { PlusCircle, ArrowLeft, Loader2, Users } from 'lucide-react';
 import { useArtist } from '@/lib/context/artist-context';

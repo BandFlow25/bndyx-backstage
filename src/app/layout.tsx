@@ -2,16 +2,12 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import './theme.css';
-
-// Import components
-import { AuthProvider } from 'bndy-ui/components/auth';
-import { ArtistProvider } from '@/lib/context/artist-context';
-import { CalendarProvider } from '@/lib/context/calendar-context';
-import { ThemeProvider } from '@/lib/context/theme-context';
-import { GoogleMapsProvider } from 'bndy-ui/components/providers/GoogleMapsProvider';
-import { ErrorBoundary } from 'bndy-ui';
-// Use explicit type import to resolve type compatibility issues
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 import type { ReactNode } from 'react';
+
+// Import the client providers component
+import Providers from './providers';
+
 // Initialize Firebase
 import { initializeFirebase } from '@/lib/firebase';
 
@@ -23,38 +19,49 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'bndy | Backstage',
   description: 'Backstage management platform for bands, artists, and venues',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon.svg', type: 'image/svg+xml' }
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png' }
+    ],
+    shortcut: [
+      { url: '/favicon.ico' }
+    ]
+  }
 };
 
-export default function RootLayout({
-  children,
-}: {
+type RootLayoutProps = {
   children: ReactNode;
-}) {
-  // Initialize Firebase on the client side
-  if (typeof window !== 'undefined') {
-    initializeFirebase();
-  }
-  
+};
+
+export default function RootLayout({ children }: RootLayoutProps) {
+  // Server component can only do server-side initialization
+  // Client-side initialization will be done in the Providers component
+
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable}`}>
       <head>
-        {/* No inline scripts to avoid hydration mismatches */}
+        {/* Inline script for dark mode */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const darkMode = localStorage.getItem('darkMode') === 'true';
+                  if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
-      <body className={`${inter.variable} antialiased`}>
-        <ErrorBoundary>
-          <AuthProvider>
-            <ArtistProvider>
-              <CalendarProvider>
-                <ThemeProvider>
-                  {/* The type issue is due to different React versions between packages */}
-                  <GoogleMapsProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
-                    <>{children}</>
-                  </GoogleMapsProvider>
-                </ThemeProvider>
-              </CalendarProvider>
-            </ArtistProvider>
-          </AuthProvider>
-        </ErrorBoundary>
+      <body>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

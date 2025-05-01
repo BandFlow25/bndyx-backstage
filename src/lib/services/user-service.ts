@@ -145,22 +145,9 @@ export const getCurrentUserProfile = async (): Promise<UserProfile | null> => {
   console.log('Current user from auth:', currentUser ? `User ID: ${currentUser.uid}` : 'No current user');
   
   if (!currentUser) {
-    console.log('No current user in auth, checking localStorage token');
-    // Try to get user from token as fallback
-    const token = localStorage.getItem('bndyAuthToken');
-    if (token) {
-      try {
-        console.log('Found token in localStorage, attempting to decode');
-        const decoded = JSON.parse(atob(token.split('.')[1]));
-        if (decoded && decoded.uid) {
-          console.log('Successfully decoded token, user ID:', decoded.uid);
-          return getUserById(decoded.uid);
-        }
-      } catch (err) {
-        console.error('Error decoding token:', err);
-      }
-    }
-    
+    console.log('No current user in auth');
+    // Note: We no longer access localStorage directly per Single Auth Context Rule
+    // The user should be using the AuthProvider from bndy-ui
     console.log('No authentication source found');
     return null;
   }
@@ -179,27 +166,12 @@ export const getCurrentUserId = async (): Promise<string | null> => {
   console.log('Current user from auth:', currentUser ? `User ID: ${currentUser.uid}` : 'No current user');
   
   if (!currentUser) {
-    console.log('No current user in auth, checking localStorage token');
-    // Try to get user from token as fallback
-    const token = localStorage.getItem('bndyAuthToken');
-    if (token) {
-      try {
-        console.log('Found token in localStorage, attempting to decode');
-        const decoded = JSON.parse(atob(token.split('.')[1]));
-        if (decoded && decoded.uid) {
-          console.log('Successfully decoded token, user ID:', decoded.uid);
-          return decoded.uid;
-        }
-      } catch (err) {
-        console.error('Error decoding token:', err);
-      }
-    }
-    
-    console.log('No authentication source found');
+    console.log('No current user in auth');
+    // Note: We no longer access localStorage directly per Single Auth Context Rule
+    // The user should be using the AuthProvider from bndy-ui
     return null;
   }
   
-  console.log('Returning current user ID:', currentUser.uid);
   return currentUser.uid;
 };
 
@@ -336,28 +308,13 @@ export const updateCurrentUserProfile = async (
   console.log('Current user from auth:', currentUser ? `User ID: ${currentUser.uid}` : 'No current user');
   
   if (!currentUser) {
-    console.log('No current user in auth, checking localStorage token');
-    // Fallback to token authentication
+    console.log('No current user in auth');
+    // Note: We no longer access localStorage directly per Single Auth Context Rule
+    // The user should be using the AuthProvider from bndy-ui
+    // This service should only be called when a user is authenticated
     
-    // If we don't have a current user, check if we have a token in localStorage
-    // This is a fallback mechanism when Firebase Auth isn't fully initialized
-    const token = localStorage.getItem('bndyAuthToken');
-    if (token) {
-      try {
-        console.log('Found token in localStorage, attempting to decode');
-        // Try to decode the token to get the user ID
-        const decoded = JSON.parse(atob(token.split('.')[1]));
-        if (decoded && decoded.uid) {
-          console.log('Successfully decoded token, user ID:', decoded.uid);
-          // Using UID from token
-          return updateUserProfile(decoded.uid, profileData, avatarFile);
-        }
-      } catch (err) {
-        console.error('Error decoding token:', err);
-      }
-    }
-    
-    console.error('No authenticated user found');
+    // Return an error or null since we can't proceed without authentication
+    console.error('Cannot update profile: No authenticated user');
     throw new Error('No authenticated user found. Please try refreshing the page.');
   }
   

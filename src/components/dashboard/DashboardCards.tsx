@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Calendar, Music, MessageCircle, AlertTriangle, ArrowRight } from 'lucide-react';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { useArtist } from '@/lib/context/artist-context';
 import { BndyCalendarEvent } from '@/types/calendar';
-import { getUpcomingEventsForDashboard } from '@/lib/firebase/events';
+import { getUpcomingEventsForDashboard } from '@/lib/firebase/events/dashboard-events';
 import Link from 'next/link';
 
 // Function to render the pink exclamation mark for unimplemented features

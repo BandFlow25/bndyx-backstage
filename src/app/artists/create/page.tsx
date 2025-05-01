@@ -3,25 +3,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { useAuth } from 'bndy-ui/components/auth';
+import { useAuth } from 'bndy-ui';
 import { useArtist } from '@/lib/context/artist-context';
 import { useTheme } from '@/lib/context/theme-context';
 import { ArtistService } from '@/lib/services/artist-service';
-import { CreateArtistData, Artist, MusicGenre, ArtistMember, getAvailableMusicGenres } from 'bndy-types';
+import { CreateArtistData, MusicGenre, getAvailableMusicGenres, UserProfile } from 'bndy-types';
 import { validateSocialMediaUrl } from '@/lib/utils/social-media-utils';
-import { Music, MapPin, Check, X, Upload, InfoIcon } from 'lucide-react';
+import { MapPin, InfoIcon, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { PlaceLookup, BndyLoadingScreen } from 'bndy-ui';
-import { RadioButton } from 'bndy-ui/components/ui/RadioButton';
-import { Checkbox } from 'bndy-ui/components/ui/Checkbox';
-import { SocialMediaInput } from 'bndy-ui/components/ui/SocialMediaInput';
-import type { SocialMediaLink } from 'bndy-ui/components/ui/SocialMediaInput';
+// Now importing from main entry point since types are properly exported
+import type { SocialMediaLink } from 'bndy-ui';
+
+// Import our modular components
+import {
+  ArtistTypeSelector,
+  GenreSelector,
+  ImageUploader,
+  MusicTypeSelector,
+  NameAvailabilityChecker,
+  SocialMediaSelector
+} from './components';
 
 // Get available genres from the shared utility function
 const AVAILABLE_GENRES = getAvailableMusicGenres();
 
 const CreateArtistPage = () => {
-  const { currentUser } = useAuth();
+  const { currentUser } = useAuth() as { currentUser: UserProfile | null };
   const { refreshArtists } = useArtist();
   const { isDarkMode } = useTheme();
   const router = useRouter();
@@ -33,12 +41,6 @@ const CreateArtistPage = () => {
   const [hometown, setHometown] = useState('');
   const [description, setDescription] = useState('');
   const [selectedGenres, setSelectedGenres] = useState<MusicGenre[]>([]);
-  const [instagram, setInstagram] = useState('');
-  const [facebook, setFacebook] = useState('');
-  const [spotify, setSpotify] = useState('');
-  const [twitter, setTwitter] = useState('');
-  const [youtube, setYoutube] = useState('');
-  const [website, setWebsite] = useState('');
   
   // New form state for artist type, multiple formats, and covers/originals
   const [artistType, setArtistType] = useState<'solo' | 'band'>('band');
@@ -59,7 +61,7 @@ const CreateArtistPage = () => {
   const [isCheckingName, setIsCheckingName] = useState(false);
 
   // Handle genre selection
-  const toggleGenre = (genre: MusicGenre) => {
+  const handleGenreToggle = (genre: MusicGenre) => {
     if (selectedGenres.includes(genre)) {
       setSelectedGenres(selectedGenres.filter(g => g !== genre));
     } else {
@@ -67,35 +69,34 @@ const CreateArtistPage = () => {
     }
   };
 
-  // Handle avatar image selection
+  // Handle image uploads
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    setAvatarFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatarPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  // Handle header image selection
   const handleHeaderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    setHeaderFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setHeaderPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    if (file) {
+      setHeaderFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setHeaderPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Check if artist name is available
-  const checkNameAvailability = async () => {
-    if (!name.trim()) return;
+  const handleCheckName = async () => {
+    if (!name) return;
     
     try {
       setIsCheckingName(true);
@@ -149,8 +150,8 @@ const CreateArtistPage = () => {
         }, {} as Record<string, string>)
       };
       
-      // Create the artist
-      const newArtist = await ArtistService.createArtist(
+      // Create artist in Firestore
+      const artist = await ArtistService.createArtist(
         artistData,
         currentUser.uid,
         currentUser.displayName || 'Unknown User',
@@ -159,19 +160,19 @@ const CreateArtistPage = () => {
       
       // Upload avatar if provided
       if (avatarFile) {
-        await ArtistService.uploadAvatarImage(newArtist.id, avatarFile);
+        await ArtistService.uploadAvatarImage(artist.id, avatarFile);
       }
       
-      // Upload header if provided
+      // Upload header image if provided
       if (headerFile) {
-        await ArtistService.uploadHeaderImage(newArtist.id, headerFile);
+        await ArtistService.uploadHeaderImage(artist.id, headerFile);
       }
       
-      // Refresh the list of currentUser's artists
+      // Refresh artists in context
       await refreshArtists();
       
-      // Redirect to the artist page
-      router.push(`/artists/${newArtist.id}`);
+      // Redirect to artist page
+      router.push(`/artists/${artist.id}`);
     } catch (err) {
       console.error('Error creating artist:', err);
       setError('Failed to create artist. Please try again.');
@@ -180,292 +181,174 @@ const CreateArtistPage = () => {
     }
   };
 
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!currentUser) {
+      router.push('/login');
+    }
+  }, [currentUser, router]);
+
+  if (!currentUser) {
+    return null;
+  }
+
+  if (loading) {
+    return <BndyLoadingScreen />;
+  }
+
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8 border-b border-slate-700 dark:border-slate-800 pb-4">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Create New Artist</h1>
-          <Link 
-            href="/artists" 
-            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
-          >
-            Back to Artists
-          </Link>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Create New Artist</h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Set up your artist profile to start managing your events and performances.
+          </p>
         </div>
-
+        
         {error && (
-          <div className="bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-900 text-red-800 dark:text-red-200 p-4 rounded-lg mb-6 transition-colors duration-300">
+          <div className="mb-6 p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-md flex items-start">
+            <InfoIcon className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
             <p>{error}</p>
           </div>
         )}
-
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-200 dark:border-slate-700 transition-colors duration-300">
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left column */}
             <div>
-              {/* Artist Type Selection */}
               <div className="mb-6">
-                <label className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
-                  Artist Type*
-                </label>
-                <div className="flex space-x-4">
-                  <RadioButton 
-                    name="artistType" 
-                    value="solo" 
-                    checked={artistType === 'solo'} 
-                    onChange={() => setArtistType('solo')}
-                    label="Solo Artist"
-                  />
-                  <RadioButton 
-                    name="artistType" 
-                    value="band" 
-                    checked={artistType === 'band'} 
-                    onChange={() => setArtistType('band')}
-                    label="Band/Group"
-                  />
-                </div>
-              </div>
-              <div className="mb-6">
-                <label htmlFor="name" className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
-                  Artist/Band Name*
+                <div className="relative">
+                <label htmlFor="name" className="block text-sm font-medium mb-2">
+                  Artist/Band Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     id="name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onBlur={checkNameAvailability}
-                    className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setNameAvailable(null);
+                    }}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                     required
-                    maxLength={50}
                   />
-                  {isCheckingName && (
-                    <div className="absolute right-3 top-2.5">
-                      <div className="w-5 h-5 border-2 border-t-orange-500 border-r-cyan-500 border-b-orange-500 border-l-cyan-500 rounded-full animate-spin"></div>
-                    </div>
-                  )}
-                  {nameAvailable === true && !isCheckingName && (
-                    <div className="absolute right-3 top-2.5 text-green-500">
-                      <Check className="w-5 h-5" />
-                    </div>
-                  )}
-                  {nameAvailable === false && !isCheckingName && (
-                    <div className="absolute right-3 top-2.5 text-red-500">
-                      <X className="w-5 h-5" />
+                  {name.length > 0 && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      {isCheckingName ? (
+                        <div className="h-5 w-5 border-2 border-t-transparent border-indigo-500 rounded-full animate-spin"></div>
+                      ) : nameAvailable === true ? (
+                        <Check className="h-5 w-5 text-green-500" />
+                      ) : nameAvailable === false ? (
+                        <X className="h-5 w-5 text-red-500" />
+                      ) : null}
                     </div>
                   )}
                 </div>
-                {nameAvailable === false && !isCheckingName && (
-                  <p className="text-orange-600 dark:text-orange-400 text-sm mt-1 transition-colors duration-300">
-                    This name is already taken. We'll suggest an alternative when you create the artist.
-                  </p>
+                {name.length > 0 && !isCheckingName && (
+                  <div className="mt-1 flex items-center">
+                    {nameAvailable === true ? (
+                      <p className="text-sm text-green-600">This name is available!</p>
+                    ) : nameAvailable === false ? (
+                      <p className="text-sm text-red-600">This name is already taken. Please try another.</p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleCheckName}
+                        className="text-sm text-indigo-600 hover:text-indigo-800"
+                      >
+                        Check availability
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
-
-              <div className="mb-6">
-                <label className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
-                  Music Type*
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {['covers', 'originals'].map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => {
-                        if (musicType.includes(type)) {
-                          setMusicType(musicType.filter(t => t !== type));
-                        } else {
-                          setMusicType([...musicType, type]);
-                        }
-                      }}
-                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        musicType.includes(type) ? 'bg-orange-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                      }`}
-                    >
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </button>
-                  ))}
-                </div>
               </div>
-
+              
               <div className="mb-6">
-                <label htmlFor="hometown" className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
-                  Hometown*
+                <label className="flex items-center text-sm font-medium mb-2">
+                  <MapPin className="mr-2 h-5 w-5 text-indigo-500" />
+                  Hometown
                 </label>
-                <div className="relative">
-                  <PlaceLookup
-                    value={hometown}
-                    onChange={(value) => {
-                      console.log('PlaceLookup onChange called with value:', value);
-                      setHometown(value);
-                    }}
-                    placeholder="Start typing a UK city or town"
-                    id="hometown"
-                    className="bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-orange-500"
-                  />
-                </div>
+                <PlaceLookup
+                  value={hometown}
+                  onChange={setHometown}
+                  placeholder="Enter hometown"
+                  className="w-full"
+                  label="Hometown"
+                />
               </div>
-
+              
               <div className="mb-6">
-                <label htmlFor="description" className="block text-slate-900 dark:text-white font-medium mb-2 transition-colors duration-300">
-                  Description* <span className="text-slate-500 dark:text-slate-400 text-sm transition-colors duration-300">({description.length}/120)</span>
+                <label htmlFor="description" className="block text-sm font-medium mb-2">
+                  Description
                 </label>
                 <textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors duration-300"
-                  required
-                  maxLength={120}
-                  rows={3}
+                  rows={4}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Tell us about your artist/band..."
                 />
               </div>
-
-              <div className="mb-6">
-                <label className="block text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">
-                  Genres* <span className="text-slate-500 dark:text-white text-sm transition-colors duration-300">(Select at least one)</span>
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {AVAILABLE_GENRES.map((genre) => (
-                    <button
-                      key={genre} //
-                      type="button"
-                      onClick={() => toggleGenre(genre)}
-                      className={`px-3 py-1 rounded-full text-sm font-semibold genre-button ${
-                        selectedGenres.includes(genre)
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-slate-200 dark:bg-slate-600 text-slate-800 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors duration-300'
-                      }`}
-                    >
-                      {genre}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              
+              <ArtistTypeSelector
+                artistType={artistType}
+                setArtistType={setArtistType}
+              />
+              
+              <MusicTypeSelector
+                musicType={musicType}
+                setMusicType={setMusicType}
+                enableMultipleFormats={enableMultipleFormats}
+                setEnableMultipleFormats={setEnableMultipleFormats}
+              />
             </div>
-
-            {/* Right column */}
+            
             <div>
-              <div className="mb-6">
-                <label className="block text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">
-                  Profile Images
-                </label>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Avatar upload */}
-                  <div>
-                    <div 
-                      className="bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg p-4 text-center cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors duration-300"
-                      onClick={() => avatarInputRef.current?.click()}
-                    >
-                      {avatarPreview ? (
-                        <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden">
-                          <img 
-                            src={avatarPreview} 
-                            alt="Avatar preview" 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-32 h-32 mx-auto rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center transition-colors duration-300">
-                          <div className="w-16 h-16 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center">
-                            <Upload className="h-8 w-8 text-slate-600 dark:text-white" />
-                          </div>
-                        </div>
-                      )}
-                      <p className="mt-2 text-slate-700 text-sm font-semibold transition-colors duration-300 upload-label">Avatar Image</p>
-                    </div>
-                    <input
-                      type="file"
-                      ref={avatarInputRef}
-                      onChange={handleAvatarChange}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                  </div>
-                  
-                  {/* Header upload */}
-                  <div>
-                    <div 
-                      className="bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg p-4 text-center cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors duration-300"
-                      onClick={() => headerInputRef.current?.click()}
-                    >
-                      {headerPreview ? (
-                        <div className="relative w-full h-32 mx-auto rounded-lg overflow-hidden">
-                          <img 
-                            src={headerPreview} 
-                            alt="Header preview" 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full h-32 mx-auto rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center transition-colors duration-300">
-                          <div className="w-16 h-16 rounded-lg bg-slate-300 dark:bg-slate-600 flex items-center justify-center">
-                            <Upload className="h-8 w-8 text-slate-600 dark:text-white" />
-                          </div>
-                        </div>
-                      )}
-                      <p className="mt-2 text-slate-700 text-sm font-semibold transition-colors duration-300 upload-label">Header Image</p>
-                    </div>
-                    <input
-                      type="file"
-                      ref={headerInputRef}
-                      onChange={handleHeaderChange}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">
-                  Social Media Links
-                </label>
-                
-                <SocialMediaInput 
-                  links={socialMediaLinks} 
-                  onChange={setSocialMediaLinks}
-                  className="mb-4"
-                />
-                
-                {/* Multiple Formats Option - Inside social media section */}
-                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                  <Checkbox
-                    id="enableMultipleFormats"
-                    checked={enableMultipleFormats}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEnableMultipleFormats(e.target.checked)}
-                    label={
-                      <span className="flex items-center">
-                        Enable Multiple Formats/Shows
-                        <span className="group relative ml-1">
-                          <InfoIcon className="h-4 w-4 text-slate-500 cursor-help" />
-                          <div className="absolute left-full ml-2 w-64 bg-white dark:bg-slate-700 p-2 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
-                            Multiple formats allow you to create different versions of your artist profile (e.g., full band, acoustic duo, solo shows) with their own bookings, playbooks, and setlists.
-                          </div>
-                        </span>
-                      </span>
-                    }
-                    helperText={enableMultipleFormats ? "You'll be able to create and manage different formats after setup." : undefined}
-                  />
-                </div>
-              </div>
+              <GenreSelector
+                availableGenres={AVAILABLE_GENRES}
+                selectedGenres={selectedGenres}
+                handleGenreToggle={handleGenreToggle}
+              />
+              
+              <SocialMediaSelector
+                socialMediaLinks={socialMediaLinks}
+                setSocialMediaLinks={setSocialMediaLinks}
+              />
+              
+              <ImageUploader
+                title="Artist Avatar"
+                imagePreview={avatarPreview}
+                handleImageChange={handleAvatarChange}
+                inputRef={avatarInputRef as React.RefObject<HTMLInputElement>}
+                aspectRatio="w-full h-40"
+              />
+              
+              <ImageUploader
+                title="Header Image"
+                imagePreview={headerPreview}
+                handleImageChange={handleHeaderChange}
+                inputRef={headerInputRef as React.RefObject<HTMLInputElement>}
+                aspectRatio="w-full h-32"
+              />
             </div>
           </div>
-
-          <div className="flex justify-end gap-4 mt-6">
-            <button
-              type="button"
-              onClick={() => router.push('/artists')}
-              className="px-6 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium transition-colors duration-300 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white">
+          
+          <div className="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+            <Link 
+              href="/artists" 
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
               Cancel
-            </button>
+            </Link>
             <button
               type="submit"
-              disabled={loading}
-              className="px-6 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
-              {loading ? 'Creating...' : 'Create Artist'}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={loading || nameAvailable === false}
+            >
+              Create Artist
             </button>
           </div>
         </form>

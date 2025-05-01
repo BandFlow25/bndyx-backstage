@@ -50,7 +50,7 @@ const CalendarContainer: React.FC<CalendarContainerProps> = ({
         <CalendarLegend context={context} darkMode={isDarkMode} />
         
         {/* Calendar Component */}
-        <div className="rounded-lg overflow-hidden mt-4 special-calendar-container">
+        <div className="rounded-lg overflow-hidden mt-4 special-calendar-container rbc-calendar">
           {context === 'user' ? (
             <BndyCalendarWrapper
               events={events}

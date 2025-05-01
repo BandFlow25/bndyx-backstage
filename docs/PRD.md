@@ -363,7 +363,6 @@ The MVP includes two core areas:
 - **v1.2**: Updated May 2025:
   - Added team invitation system to MVP (link-based sharing, WhatsApp integration).
   - Consolidated artist/band roles, clarified UI presentation ("Artist/Band Profile").
-  - Corrected code base vs. domain naming (e.g., `bndy.live` → `live.bndy.co.uk`).
   - Added authentication updates: Google/Facebook logins, RLS details, testing requirements.
 - **v1.3**: Updated May 2025:
   - Revised Team Invitation System to remove implementation details, focusing on product owner intent.
@@ -377,8 +376,6 @@ The MVP includes two core areas:
   - Enhanced WhatsApp event capture (Section 2.4) with detailed conversational flow, confirmed as MVP.
 - **v1.6**: Updated May 2025:
   - Updated artist/band profile to make `genres` an array of strings (Sections 2.1, 2.2).
-- **v1.7**: Updated May 2025:
-  - Corrected domain references from `live.bndy.co.uk` to `bndy.live` throughout (Sections 1.2, 2.1, 2.3, 2.4, 3.2, 3.5).
 - **v1.8**: Updated May 2025:
   - Added "Frontstage" and "Backstage" terminology to Section 1.2.
   - Updated Section 2.1 (Map View) to include zoom/pan/click interactions, enhance overlays with photos, social links, directions, contact info, ticket links, share buttons (Web Share API), and note special visual treatment for Open Mic.
