@@ -95,20 +95,16 @@ interface ArtistCardsProps {
 
 export const ArtistCards = ({ artists }: ArtistCardsProps) => {
   return (
-    <div className="mb-8">
-      <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">My Bands & Artists</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {/* Existing Artist Cards */}
+      {artists.map(artist => (
+        <Link key={artist.id} href={`/artists/${artist.id}/dashboard`}>
+          <ArtistCardCustom artist={artist} />
+        </Link>
+      ))}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {/* Existing Artist Cards */}
-        {artists.map(artist => (
-          <Link key={artist.id} href={`/artists/${artist.id}/dashboard`}>
-            <ArtistCardCustom artist={artist} />
-          </Link>
-        ))}
-        
-        {/* Create New Artist Card - Moved to the end */}
-        <CreateArtistCard />
-      </div>
+      {/* Create New Artist Card - Moved to the end */}
+      <CreateArtistCard />
     </div>
   );
 };

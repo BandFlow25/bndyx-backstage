@@ -33,10 +33,11 @@ export function AppHeader() {
   };
   
   // Only admin users should see the debug icon
-  // Using type assertion to avoid TypeScript errors
-  const isAdmin = currentUser?.roles?.includes('admin') || false;
-  const hasGodMode = Array.isArray(currentUser?.roles) && 
-    (currentUser?.roles?.includes('GODMODE') || false);
+  const isAdmin = currentUser?.roles?.some(role => 
+    ['bndy_admin', 'global_admin', 'live_admin'].includes(role)
+  ) || false;
+  // Check for godMode in the decoded token when we get it
+  const [hasGodMode, setHasGodMode] = useState(false);
   const showDebugIcon = isAdmin || hasGodMode;
   
   // Load token info when debug popup is opened
@@ -48,14 +49,17 @@ export function AppHeader() {
           if (token) {
             const decoded = jwtDecode<DecodedToken>(token);
             setTokenInfo(decoded);
+            // Set godMode state based on the decoded token
+            setHasGodMode(decoded.godMode === true);
           }
         });
       } catch (error) {
         console.error('Error decoding token:', error);
         setTokenInfo(null);
+        setHasGodMode(false);
       }
     }
-  }, [showDebugPopup]);
+  }, [showDebugPopup, getAuthToken]);
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">

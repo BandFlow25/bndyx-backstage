@@ -7,6 +7,7 @@ import { useArtist } from '@/lib/context/artist-context';
 import { BndyCalendarEvent } from '@/types/calendar';
 import { getUpcomingEventsForDashboard } from '@/lib/firebase/events/dashboard-events';
 import Link from 'next/link';
+import { User } from 'firebase/auth';
 
 // Function to render the pink exclamation mark for unimplemented features
 const NotImplementedMark = () => (
@@ -16,7 +17,7 @@ const NotImplementedMark = () => (
 );
 
 export const DashboardCards = () => {
-  const { currentUser } = useAuth();
+  const { currentUser } = useAuth() as { currentUser: User | null };
   const { currentUserArtists } = useArtist();
   const [upcomingEvents, setUpcomingEvents] = useState<BndyCalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,9 +43,9 @@ export const DashboardCards = () => {
         // Get artist IDs
         const artistIds = currentUserArtists.map(artist => artist.id);
         
-        // Get upcoming events
+        // Get upcoming events - currentUser is a Firebase User with uid property
         const events = await getUpcomingEventsForDashboard(
-          currentUser.uid,
+          currentUser.uid, // Firebase User always has uid property
           artistIds,
           2 // Limit to 2 events
         );
@@ -61,9 +62,9 @@ export const DashboardCards = () => {
   }, [currentUser, currentUserArtists]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
       {/* Upcoming Events Card */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 relative">
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 relative">
         <Calendar className="h-8 w-8 text-orange-500 mb-3" />
         <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Upcoming Events</h3>
         
@@ -91,7 +92,7 @@ export const DashboardCards = () => {
       </div>
       
       {/* Song Actions Card - Not implemented */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 relative">
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 relative">
         <Music className="h-8 w-8 text-orange-500 mb-3" />
         <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Song Actions</h3>
         <p className="text-[var(--text-secondary)] text-sm">
@@ -101,7 +102,7 @@ export const DashboardCards = () => {
       </div>
       
       {/* Message Hub Card - Not implemented */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 relative">
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 relative">
         <MessageCircle className="h-8 w-8 text-orange-500 mb-3" />
         <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Message Hub</h3>
         <p className="text-[var(--text-secondary)] text-sm">

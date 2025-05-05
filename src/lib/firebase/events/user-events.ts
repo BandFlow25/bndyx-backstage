@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { getFirebaseFirestore } from '../index';
 import { COLLECTIONS } from '../collections';
-import { BndyCalendarEvent } from '@/types/calendar';
+import { BndyCalendarEvent, USER_CALENDAR_BAND_EVENT_COLOR } from '@/types/calendar';
 import { convertToCalendarEvent } from './converters';
 import { FirestoreEvent } from './types';
 
@@ -20,7 +20,8 @@ import { FirestoreEvent } from './types';
  * @returns Array of calendar events for the user and their artists
  */
 export const getUserEvents = async (userId: string, artistIds: string[] = []): Promise<BndyCalendarEvent[]> => {
-  console.log(`getUserEvents called for user ${userId} with artist IDs:`, artistIds);
+  const startTime = performance.now();
+  console.log(`[PERF][${new Date().toISOString()}] getUserEvents started for user ${userId} with ${artistIds.length} artists`);
   try {
     const firestore = getFirebaseFirestore();
     const eventsCollection = collection(firestore, COLLECTIONS.EVENTS);
@@ -35,7 +36,8 @@ export const getUserEvents = async (userId: string, artistIds: string[] = []): P
     );
     
     const personalQuerySnapshot = await getDocs(personalEventQuery);
-    console.log(`Found ${personalQuerySnapshot.size} events created by user ${userId}`);
+    const personalQueryTime = performance.now();
+    console.log(`[PERF][${new Date().toISOString()}] Firebase query completed in ${(personalQueryTime - startTime).toFixed(2)}ms - Found ${personalQuerySnapshot.size} events created by user ${userId}`);
     
     // Process personal events - exclude those with artistId as they are band events
     let personalCount = 0;
@@ -46,7 +48,7 @@ export const getUserEvents = async (userId: string, artistIds: string[] = []): P
       
       // If the event has an artistId, it's a band event created by this user
       if (eventData.artistId) {
-        console.log(`Found band event created by user: ${eventData.title} for artist ${eventData.artistId}`);
+        // Band event created by user - will be processed later
         bandCount++;
         // Skip for now - we'll get it in the band events query
       } else {
@@ -61,11 +63,12 @@ export const getUserEvents = async (userId: string, artistIds: string[] = []): P
       }
     });
     
-    console.log(`Processed ${personalCount} personal events and identified ${bandCount} band events created by user`);
+    const personalProcessTime = performance.now();
+    console.log(`[PERF][${new Date().toISOString()}] Processed ${personalCount} personal events and identified ${bandCount} band events in ${(personalProcessTime - personalQueryTime).toFixed(2)}ms`);
     
     // If artistIds are provided, get events for those artists too
     if (artistIds.length > 0) {
-      console.log('Fetching events for artists:', artistIds);
+      console.log(`[PERF][${new Date().toISOString()}] Starting fetch for ${artistIds.length} artists`);
       
       // We need to do separate queries for each artistId
       for (const artistId of artistIds) {
@@ -78,7 +81,7 @@ export const getUserEvents = async (userId: string, artistIds: string[] = []): P
           if (artistDoc.exists()) {
             const artistData = artistDoc.data();
             artistName = artistData.name || 'Band';
-            console.log(`Found artist: ${artistName} (${artistId})`);
+            console.log(`[PERF][${new Date().toISOString()}] Retrieved artist: ${artistName} (${artistId})`);
           } else {
             console.warn(`Artist document not found for ID: ${artistId}`);
             continue; // Skip this artist if not found
@@ -91,7 +94,8 @@ export const getUserEvents = async (userId: string, artistIds: string[] = []): P
           );
           
           const artistQuerySnapshot = await getDocs(artistEventQuery);
-          console.log(`Found ${artistQuerySnapshot.size} events for artist ${artistId}`);
+          const artistQueryTime = performance.now();
+          console.log(`[PERF][${new Date().toISOString()}] Retrieved ${artistQuerySnapshot.size} events for artist ${artistId}`);
           
           // Process each event
           artistQuerySnapshot.forEach((docSnapshot) => {
@@ -105,7 +109,7 @@ export const getUserEvents = async (userId: string, artistIds: string[] = []): P
             );
             
             if (isDuplicate) {
-              console.log(`Skipping duplicate event with same ID: ${eventData.title}`);
+              // Skip duplicate events
               return;
             }
             
@@ -128,12 +132,12 @@ export const getUserEvents = async (userId: string, artistIds: string[] = []): P
             const bandEvent = convertToCalendarEvent(bandEventData);
             
             // Double-check that the band event has the correct properties
-            if (!bandEvent.color || bandEvent.color !== '#3b82f6') {
-              console.log('Forcing color for band event to blue-500');
-              bandEvent.color = '#3b82f6'; // blue-500
+            if (!bandEvent.color || bandEvent.color !== USER_CALENDAR_BAND_EVENT_COLOR) {
+              // Ensure consistent color for band events
+              bandEvent.color = USER_CALENDAR_BAND_EVENT_COLOR;
             }
             
-            console.log(`Adding band event: ${bandEvent.title} with sourceType=${bandEvent.sourceType}`);
+            // Add band event to the list
             bandEvents.push(bandEvent);
           });
         } catch (error) {
@@ -145,12 +149,9 @@ export const getUserEvents = async (userId: string, artistIds: string[] = []): P
     // Combine personal events with band events
     const allEvents = [...events, ...bandEvents];
     
-    // Log event counts for debugging
-    console.log('Loaded events:', { 
-      total: allEvents.length, 
-      userEvents: events.length, 
-      bandEvents: bandEvents.length 
-    });
+    // Log performance metrics for the entire operation
+    const endTime = performance.now();
+    console.log(`[PERF][${new Date().toISOString()}] Completed loading ${allEvents.length} events (${events.length} user, ${bandEvents.length} band) in ${(endTime - startTime).toFixed(2)}ms`);
     
     // Return all events with band events properly marked
     return allEvents;

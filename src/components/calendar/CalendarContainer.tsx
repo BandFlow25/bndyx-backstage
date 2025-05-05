@@ -1,20 +1,27 @@
 'use client';
 
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from 'bndy-ui';
+import { Card, CardHeader, CardTitle, CardContent, BndySpinner } from 'bndy-ui';
 import { BndyCalendarEvent } from '@/types/calendar';
-import CalendarLegend from './CalendarLegend';
-import BndyCalendarWrapper from './BndyCalendarWrapper';
-import ArtistCalendarWrapper from './ArtistCalendarWrapper';
+import UserModernCalendarWrapper from './UserModernCalendarWrapper';
+import ArtistModernCalendarWrapper from './ArtistModernCalendarWrapper';
+import SkeletonCalendar from './SkeletonCalendar';
+import { useCalendar } from '@/lib/context/calendar-context';
 
 interface CalendarContainerProps {
   events: BndyCalendarEvent[];
   isDarkMode: boolean;
   context: 'user' | 'artist';
-  title: string;
+  title?: string;
   subtitle?: string;
   onSelectEvent: (event: BndyCalendarEvent) => void;
   onSelectSlot: (slotInfo: any) => void;
+  readOnly?: boolean;
+  artistId?: string;
+  showDayAgenda?: boolean; // Whether to show the day agenda below the month view
+  // Aliases for backward compatibility
+  darkMode?: boolean;
+  calendarContext?: 'user' | 'artist';
 }
 
 /**
@@ -27,49 +34,74 @@ const CalendarContainer: React.FC<CalendarContainerProps> = ({
   title,
   subtitle,
   onSelectEvent,
-  onSelectSlot
+  onSelectSlot,
+  readOnly = false,
+  artistId,
+  showDayAgenda = false, // Default to not showing day agenda
+  // Support both naming conventions
+  darkMode,
+  calendarContext
 }) => {
-  return (
-    <Card 
-      variant="elevated" 
-      padding="md" 
-      darkMode={isDarkMode}
-      className="overflow-hidden special-calendar-card"
-    >
-      <CardHeader className="flex justify-between items-center flex-wrap">
-        <CardTitle className="text-slate-900 dark:text-white">{title}</CardTitle>
-        {subtitle && (
-          <p className="text-sm text-slate-700 dark:text-white transition-colors duration-300">
-            {subtitle}
-          </p>
-        )}
-      </CardHeader>
-      
-      <CardContent>
-        {/* Calendar Legend */}
-        <CalendarLegend context={context} darkMode={isDarkMode} />
-        
-        {/* Calendar Component */}
-        <div className="rounded-lg overflow-hidden mt-4 special-calendar-container rbc-calendar">
-          {context === 'user' ? (
-            <BndyCalendarWrapper
+  // Use the original prop names, but fall back to the new ones if provided
+  const effectiveDarkMode = isDarkMode ?? darkMode ?? false;
+  const effectiveContext = context ?? calendarContext ?? 'user';
+  
+  // Get loading state from calendar context
+  const { isLoading } = useCalendar();
+  
+  // Performance tracking for renders
+  const renderStartTime = performance.now();
+  console.log(`[PERF][${new Date().toISOString()}] CalendarContainer - Rendering with context=${effectiveContext}, events=${events.length}, isLoading=${isLoading}`);
+  
+  const result = (
+    <div className="w-full overflow-hidden rounded-none">
+      {/* Only show header if there's a title */}
+      {(title || subtitle) && (
+        <div className="flex justify-between items-center flex-wrap p-2">
+          {title && <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>}
+          {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>}
+        </div>
+      )}
+
+      <div className="p-0">
+        {/* Render the appropriate calendar based on context */}
+        <div className="calendar-container">
+          {isLoading ? (
+            <div>
+              <div className="flex justify-center mb-4">
+                <BndySpinner size={40} label="Loading calendar data..." />
+              </div>
+              <SkeletonCalendar />
+            </div>
+          ) : effectiveContext === 'user' ? (
+            <UserModernCalendarWrapper
               events={events}
-              isDarkMode={isDarkMode}
               onSelectEvent={onSelectEvent}
               onSelectSlot={onSelectSlot}
+              isDarkMode={effectiveDarkMode}
+              readOnly={readOnly}
+              showDayAgenda={showDayAgenda}
             />
           ) : (
-            <ArtistCalendarWrapper
+            <ArtistModernCalendarWrapper
               events={events}
-              isDarkMode={isDarkMode}
               onSelectEvent={onSelectEvent}
               onSelectSlot={onSelectSlot}
+              isDarkMode={effectiveDarkMode}
+              artistId={artistId}
+              showDayAgenda={showDayAgenda}
             />
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
+  
+  // Log render completion time
+  const renderEndTime = performance.now();
+  console.log(`[PERF][${new Date().toISOString()}] CalendarContainer - Render completed in ${(renderEndTime - renderStartTime).toFixed(2)}ms`);
+  
+  return result;
 };
 
 export default CalendarContainer;

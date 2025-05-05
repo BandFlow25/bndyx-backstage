@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import './theme.css';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
 import type { ReactNode } from 'react';
 
 // Import the client providers component

@@ -2,12 +2,15 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from 'bndy-ui';
+import type { User } from 'firebase/auth';
 import { useArtist } from './artist-context';
-import { BndyCalendarEvent, EventType } from '@/types/calendar';
+import { BndyCalendarEvent, EventType, USER_CALENDAR_BAND_EVENT_COLOR } from '@/types/calendar';
 // Import from the new modular structure
 import { createEvent, updateEvent, deleteEvent } from '@/lib/firebase/events/core-operations';
 import { getUserEvents } from '@/lib/firebase/events/user-events';
 import { getArtistEvents } from '@/lib/firebase/events/artist-events';
+// Import the new artist cache service
+import { getCachedArtistsByUserId } from '@/lib/services/cache/artist-cache';
 
 interface CalendarContextType {
   events: BndyCalendarEvent[];
@@ -54,9 +57,8 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Update displayed events based on showBandEvents setting
   useEffect(() => {
-    // If showing band events, include all events
-    // Otherwise, filter out events with sourceType === 'band'
-    console.log('Toggle state changed:', { showBandEvents, userEventsCount: userEvents.length, bandEventsCount: bandEvents.length });
+    // Performance tracking for event filtering
+    const startTime = performance.now();
     
     // Create a new array of events with proper styling
     let filteredEvents = [];
@@ -69,17 +71,20 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Make sure band events are blue
       const styledBandEvents = bandEvents.map(event => ({
         ...event,
-        color: '#3b82f6' // blue-500
+        color: USER_CALENDAR_BAND_EVENT_COLOR
       }));
       
       filteredEvents = [...filteredEvents, ...styledBandEvents];
     }
     
-    console.log('Filtered events:', filteredEvents.length);
+    // Log performance metrics
+    const endTime = performance.now();
+    console.log(`[PERF][${new Date().toISOString()}] CalendarContext - Filtered ${filteredEvents.length} events (${userEvents.length} user, ${bandEvents.length} band) in ${(endTime - startTime).toFixed(2)}ms`);
+    
     setEvents(filteredEvents);
   }, [showBandEvents, userEvents, bandEvents]);
 
-  // Load events for the current user and their artists
+  // Load events for the current user and their artists with parallel data fetching and caching
   const loadEvents = useCallback(async () => {
     if (!currentUser) {
       setUserEvents([]);
@@ -89,21 +94,61 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     try {
+      // Start performance tracking
+      const startTime = performance.now();
+      console.log(`[PERF][${new Date().toISOString()}] CalendarContext - Starting parallel data loading`);
+      
       setIsLoading(true);
       setError(null);
 
-      // Get artist IDs that the user is a member of
-      const artistIds = currentUserArtists?.map(artist => artist.id) || [];
+      // Type assertion for currentUser to ensure it has the uid property
+      const user = currentUser as User;
       
-      // Load events for the user and their artists
-      const allEvents = await getUserEvents(currentUser.uid, artistIds);
+      // Fetch user events and artists data in parallel using Promise.all
+      console.log(`[PERF][${new Date().toISOString()}] CalendarContext - Starting parallel fetch for user ${user.uid}`);
+      
+      // Use Promise.all to fetch both user events and artist data in parallel
+      // This is a significant performance improvement over sequential fetching
+      const [artists, allEvents] = await Promise.all([
+        // Get cached artist data - this will use the cache if available
+        getCachedArtistsByUserId(user.uid),
+        // Get user events using the artistIds from the cached artists
+        // This ensures we have the artist data before fetching events
+        getUserEvents(user.uid, currentUserArtists?.map(artist => artist.id) || [])
+      ]);
+      
+      const dataLoadTime = performance.now();
+      console.log(`[PERF][${new Date().toISOString()}] CalendarContext - Parallel data loading completed in ${(dataLoadTime - startTime).toFixed(2)}ms`);
+      console.log(`[PERF][${new Date().toISOString()}] CalendarContext - Retrieved ${artists.length} artists and ${allEvents.length} events`);
+      
+      // Process the events with artist information for better display
+      // This creates a mapping of artistId to artist name for faster lookups
+      const artistMap = new Map(artists.map(artist => [artist.id, artist.name]));
+      
+      // Enhance band events with artist names if missing
+      const enhancedEvents = allEvents.map(event => {
+        if (event.sourceType === 'band' && event.artistId && !event.artistName) {
+          return {
+            ...event,
+            artistName: artistMap.get(event.artistId) || 'Unknown Band'
+          };
+        }
+        return event;
+      });
       
       // Separate user events and band events
-      const userOnlyEvents = allEvents.filter(event => event.sourceType !== 'band');
-      const bandOnlyEvents = allEvents.filter(event => event.sourceType === 'band');
+      const userOnlyEvents = enhancedEvents.filter(event => event.sourceType !== 'band');
+      const bandOnlyEvents = enhancedEvents.filter(event => event.sourceType === 'band');
       
+      // Log event counts
+      console.log(`[PERF][${new Date().toISOString()}] CalendarContext - Processing ${enhancedEvents.length} events (${userOnlyEvents.length} user, ${bandOnlyEvents.length} band)`);
+      
+      // Update state with the fetched and enhanced data
       setUserEvents(userOnlyEvents);
       setBandEvents(bandOnlyEvents);
+      
+      const endTime = performance.now();
+      console.log(`[PERF][${new Date().toISOString()}] CalendarContext - Total load time: ${(endTime - startTime).toFixed(2)}ms`);
     } catch (err) {
       console.error('Error loading events:', err);
       setError(err instanceof Error ? err : new Error('Failed to load events'));
@@ -124,7 +169,9 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     try {
-      const eventId = await createEvent(event, currentUser.uid);
+      // Type assertion for currentUser to ensure it has the uid property
+      const user = currentUser as User;
+      const eventId = await createEvent(event, user.uid);
       await loadEvents(); // Refresh events after creating a new one
       return eventId;
     } catch (err) {

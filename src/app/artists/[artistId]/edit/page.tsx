@@ -9,7 +9,7 @@ import { ArtistService } from '@/lib/services/artist-service';
 import { Artist, MusicGenre, ArtistMember, getAvailableMusicGenres } from 'bndy-types';
 import { validateSocialMediaUrl } from '@/lib/utils/social-media-utils';
 import { Music, MapPin, Check, X, Upload, InfoIcon } from 'lucide-react';
-import { PlaceLookup } from 'bndy-ui';
+import { LazyPlaceLookup } from '@/components/ui/LazyPlaceLookup';
 import { RadioButton } from 'bndy-ui';
 import { Checkbox } from 'bndy-ui';
 import { SocialMediaInput } from 'bndy-ui';
@@ -325,15 +325,14 @@ const EditArtistPage = () => {
                   Hometown
                 </label>
                 <div className="relative">
-                  <PlaceLookup
+                  <LazyPlaceLookup
                     value={hometown}
                     onChange={(value) => {
                       console.log('Artist Edit - PlaceLookup onChange called with value:', value);
                       setHometown(value);
                     }}
                     placeholder="Start typing a UK city or town"
-                    id="hometown"
-                    className="bg-slate-700 border-slate-600 text-white focus:ring-orange-500"
+                    className="w-full"
                   />
                 </div>
               </div>

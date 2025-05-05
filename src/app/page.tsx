@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { personas, PersonaType } from './lib/personas';
 import { useRouter } from 'next/navigation';
 import { useAuth } from 'bndy-ui';
+import { UserProfile } from 'bndy-types';
 
 // Define the JWT payload interface to match our token structure
 interface BndyJwtPayload {
@@ -39,7 +40,7 @@ export default function Home() {
   const currentPersona = personas[activePersona];
   const router = useRouter();
   // Move useAuth hook to the top level of the component
-  const { currentUser, getAuthToken } = useAuth();
+  const { currentUser, getAuthToken } = useAuth() as { currentUser: UserProfile | null; getAuthToken: () => Promise<string | null> };
   
   // Performance timing helper
   const logPerf = (step: string, startTime: number) => {
@@ -80,7 +81,7 @@ export default function Home() {
     // useAuth already called at the top level of the component
     const debugInfoElement = document.getElementById('auth-debug-info');
     
-    // Update debug panel with initial state
+    // Update debug panel with initial state 
     if (debugInfoElement) {
       debugInfoElement.textContent = JSON.stringify({
         userExists: !!currentUser,
@@ -92,7 +93,7 @@ export default function Home() {
     if (currentUser) {
       try {
         // Get the token using the proper useAuth hook method 
-        getAuthToken().then(token => {
+        getAuthToken().then((token: string | null) => {
           if (!token) return;
           
           // Log token details (without exposing sensitive parts)

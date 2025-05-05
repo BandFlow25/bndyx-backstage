@@ -5,16 +5,16 @@ import '../../../calendar/calendar-dark-mode.css';
 import { useParams, useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from 'bndy-ui';
-import { BndyCalendarEvent, EventType } from '@/types/calendar';
-import { PlusCircle, ArrowLeft, Loader2, Users } from 'lucide-react';
+import { BndyCalendarEvent, EventType, getEventColor, EventCategory } from '@/types/calendar';
+import { Loader2, Users } from 'lucide-react';
 import { useArtist } from '@/lib/context/artist-context';
 import { useCalendar } from '@/lib/context/calendar-context';
 import { useTheme } from '@/lib/context/theme-context';
-import EventForm from '@/components/calendar/EventForm';
-import EventDetailsModal from '@/components/calendar/EventDetailsModal';
-import Link from 'next/link';
 import { ErrorBoundary, ApiErrorBoundary } from 'bndy-ui';
-import ArtistCalendarWrapper from '@/components/calendar/ArtistCalendarWrapper';
+import ArtistModernCalendarWrapper from '@/components/calendar/ArtistModernCalendarWrapper';
+import CalendarContainer from '@/components/calendar/CalendarContainer';
+import CalendarHeader from '@/components/calendar/CalendarHeader';
+import { consolidateMemberEvents } from '@/lib/utils/calendar-helpers';
 
 export default function ArtistCalendarPage() {
   const params = useParams();
@@ -50,8 +50,14 @@ export default function ArtistCalendarPage() {
     try {
       setIsLoadingArtistEvents(true);
       setArtistEventsError(null);
-      const events = await getEventsForArtist(artistId);
-      setArtistEvents(events);
+      // Get the original events from the API
+      const originalEvents = await getEventsForArtist(artistId);
+      
+      // Consolidate member unavailable/tentative events to show only one dot per day
+      const consolidatedEvents = consolidateMemberEvents(originalEvents);
+      
+      // Set the consolidated events for the calendar view
+      setArtistEvents(consolidatedEvents);
     } catch (err) {
       console.error('Error loading artist events:', err);
       setArtistEventsError(err instanceof Error ? err : new Error('Failed to load artist events'));
@@ -193,28 +199,15 @@ export default function ArtistCalendarPage() {
   return (
     <MainLayout>
       <ErrorBoundary>
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-0 py-3 bg-white dark:bg-slate-900 transition-colors duration-300">
         {/* Back to Artist Dashboard */}
-        <div className="mb-4">
-          <Link 
-            href={`/artists/${artistId}/dashboard`} 
-            className="inline-flex items-center text-orange-500 hover:text-orange-600 transition-colors"
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            <span>Back to {currentArtist.name} Backstage</span>
-          </Link>
-        </div>
-
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{currentArtist.name}'s Calendar</h1>
-          <button
-            onClick={handleCreateEvent}
-            className="flex items-center px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
-          >
-            <PlusCircle size={18} className="mr-2" />
-            Add Event
-          </button>
-        </div>
+        {/* Calendar Header - Using the same component as user calendar */}
+        <CalendarHeader 
+          title={`${currentArtist.name}'s Calendar`}
+          darkMode={isDarkMode}
+          backLink={`/artists/${artistId}/dashboard`}
+          backText="Backstage"
+        />
 
         {(error || artistEventsError) && (
           <div className="mb-6 p-4 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 rounded-lg">
@@ -223,126 +216,59 @@ export default function ArtistCalendarPage() {
           </div>
         )}
 
-        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-          <div className="mb-6">
-       
-            
-            <div className="flex flex-wrap gap-4 mb-4">
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-[#e91e63] mr-2"></div>
-                <span className="text-sm text-[var(--text-secondary)]">Gigs</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-[#ff9800] mr-2"></div>
-                <span className="text-sm text-[var(--text-secondary)]">Practice</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-[#9c27b0] mr-2"></div>
-                <span className="text-sm text-[var(--text-secondary)]">Recording</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-[#2196f3] mr-2"></div>
-                <span className="text-sm text-[var(--text-secondary)]">Meetings</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-[#9e9e9e] mr-2"></div>
-                <span className="text-sm text-[var(--text-secondary)]">Other</span>
+        {/* Calendar Component */}
+        <ApiErrorBoundary 
+          onRetry={() => loadArtistEvents()}
+          fallbackComponent={
+            <div className="p-4 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 rounded-lg">
+              <p className="font-medium">Error loading calendar events</p>
+              <p>An error occurred while fetching calendar data</p>
+            </div>
+          }
+        >
+          {isLoadingArtistEvents ? (
+            <div className="h-[500px] flex items-center justify-center bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+              <Loader2 size={36} className="animate-spin text-orange-500" />
+            </div>
+          ) : artistEventsError ? (
+            <div className="h-[500px] flex items-center justify-center bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <div className="text-center">
+                <p className="text-red-600 dark:text-red-400 mb-2">Error loading events</p>
+                <button 
+                  onClick={() => loadArtistEvents()}
+                  className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                >
+                  Retry
+                </button>
               </div>
             </div>
-            
-            {/* Member unavailability is shown directly on the calendar with member names */}
-          </div>
-
-          {/* Calendar Component */}
-          <ApiErrorBoundary onRetry={() => loadArtistEvents()}>
-            <div className="rounded-lg overflow-hidden">
-              {isLoadingArtistEvents ? (
-                <div className="h-[500px] flex items-center justify-center bg-slate-50 dark:bg-slate-700/50">
-                  <Loader2 size={36} className="animate-spin text-orange-500" />
-                </div>
-              ) : artistEventsError ? (
-                <div className="h-[500px] flex items-center justify-center bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <div className="text-center">
-                    <p className="text-red-600 dark:text-red-400 mb-2">Error loading events</p>
-                    <button 
-                      onClick={() => loadArtistEvents()}
-                      className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                </div>
-              ) : artistEvents.length === 0 ? (
-                <div className="h-[500px] flex items-center justify-center bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                  <div className="text-center">
-                    <Users className="h-12 w-12 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
-                    <p className="text-[var(--text-secondary)] mb-2">No events yet</p>
-                    {currentArtist && (
-                      <p className="text-[var(--text-secondary)] text-sm">
-                        Click "Add Event" to create your first event for {currentArtist.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="h-[600px]">
-                  <ArtistCalendarWrapper
-                    events={artistEvents}
-                    isDarkMode={isDarkMode}
-                    onSelectEvent={handleSelectEvent}
-                    onSelectSlot={handleSelectSlot}
-                    readOnly={false}
-                  />
-                </div>
-              )}
+          ) : artistEvents.length === 0 ? (
+            <div className="h-[500px] flex items-center justify-center bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+              <div className="text-center">
+                <Users className="h-12 w-12 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
+                <p className="text-[var(--text-secondary)] mb-2">No events yet</p>
+                {currentArtist && (
+                  <p className="text-[var(--text-secondary)] text-sm">
+                    Calendar for {currentArtist.name}
+                  </p>
+                )}
+              </div>
             </div>
-          </ApiErrorBoundary>
+          ) : (
+            <CalendarContainer
+              context="artist"
+              events={artistEvents}
+              isDarkMode={isDarkMode}
+              onSelectEvent={handleSelectEvent}
+              onSelectSlot={() => {}} // No action on slot select since we removed Add Event button
+              readOnly={true} // Set to read-only since we removed the Add Event functionality
+              artistId={artistId as string}
+              showDayAgenda={true} // Show the day agenda below the month view
+            />
+          )}
+        </ApiErrorBoundary>
 
-        </div>
 
-        {/* Event Form Modal */}
-        {showEventForm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className={`w-full max-w-2xl ${isDarkMode ? 'dark' : ''}`}>
-              <EventForm
-                event={selectedEvent || {
-                  id: '',
-                  title: '',
-                  start: newEventStartDate || new Date(),
-                  end: newEventEndDate || new Date(),
-                  eventType: 'practice' as EventType,
-                  isPublic: true
-                }}
-                onSubmit={handleEventSubmit}
-                onCancel={() => {
-                  setShowEventForm(false);
-                  setNewEventStartDate(null);
-                  setNewEventEndDate(null);
-                }}
-                isArtistContext={true}
-                artistId={artistId}
-                calendarContext="band"
-                newEventStartDate={newEventStartDate || undefined}
-                isDarkMode={isDarkMode}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Event Details Modal */}
-        {showEventDetails && selectedEvent && (
-          <EventDetailsModal
-            event={selectedEvent}
-            onClose={() => {
-              setShowEventDetails(false);
-              setSelectedEvent(null);
-            }}
-            onEdit={selectedEvent.sourceType !== 'member' ? handleEventUpdate : undefined}
-            onDelete={selectedEvent.sourceType !== 'member' ? handleEventDelete : undefined}
-            isArtistContext={true}
-            calendarContext="band"
-          />
-        )}
       </div>
       </ErrorBoundary>
     </MainLayout>

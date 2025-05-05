@@ -1,11 +1,21 @@
 'use client';
 
 import React from 'react';
-import { BndyCalendar, BndyCalendarProps } from 'bndy-ui';
-import { BndyCalendarEvent } from '@/types/calendar';
+import { ModernCalendar } from 'bndy-ui';
+import { BndyCalendarEvent, getEventColor, EventCategory } from '@/types/calendar';
+import CalendarLegend from './CalendarLegend';
 
-interface ArtistCalendarWrapperProps extends Omit<BndyCalendarProps, 'events'> {
+// Define our own props interface
+interface ArtistCalendarWrapperProps {  
   events: BndyCalendarEvent[];
+  onSelectEvent?: (event: BndyCalendarEvent) => void;
+  onSelectSlot?: (slotInfo: { date: Date; allDay: boolean }) => void;
+  defaultView?: 'month' | 'agenda';
+  defaultDate?: Date;
+  className?: string;
+  readOnly?: boolean;
+  isDarkMode?: boolean;
+  artistId?: string;
 }
 
 /**
@@ -58,7 +68,7 @@ const ArtistCalendarWrapper: React.FC<ArtistCalendarWrapperProps> = ({
         // This ensures the correct color is used in the BndyCalendar component
         eventType: event.eventType,
         // Don't modify the title at all
-        // Add a special property to make these events stand out
+        // Add a special property to make these events stand out 
         isMemberEvent: true
       };
       
@@ -82,7 +92,22 @@ const ArtistCalendarWrapper: React.FC<ArtistCalendarWrapperProps> = ({
   
   console.log('Processed events:', processedEvents.length);
 
-  return <BndyCalendar events={processedEvents} {...props} />;
+  // Use ModernCalendar instead of the legacy BndyCalendar
+  return <ModernCalendar 
+    events={processedEvents as any} // Type assertion to bypass type mismatch
+    onNavigate={() => {}} // Required prop
+    onViewChange={() => {}} // Required prop
+    defaultView={props.defaultView || 'month'}
+    defaultDate={props.defaultDate || new Date()}
+    className={`bndy-modern-calendar ${props.className || ''}`}
+    readOnly={props.readOnly || false}
+    theme={props.isDarkMode ? 'dark' : 'light'}
+    weekStartsOn={1} // Monday as default
+    getEventColor={getEventColor}
+    renderLegend={() => <CalendarLegend context="artist" darkMode={props.isDarkMode} />}
+    onSelectEvent={props.onSelectEvent}
+    onSelectSlot={props.onSelectSlot}
+  />;
 };
 
 export default ArtistCalendarWrapper;

@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth, ToastProvider, useToast } from 'bndy-ui';
-import { BndySpinner, PlaceLookup } from 'bndy-ui';
+import { BndySpinner } from 'bndy-ui';
+import { LazyPlaceLookup } from '@/components/ui/LazyPlaceLookup';
 import { Instrument, UserProfile } from 'bndy-types';
 import { getCurrentUserProfile, updateCurrentUserProfile } from '@/lib/services/user-service';
 import { User, Music, MapPin, Upload, Check } from 'lucide-react';
@@ -238,7 +239,7 @@ function ProfileContent() {
                     Hometown (UK City/Town)
                   </label>
                   <div className="relative">
-                    <PlaceLookup
+                    <LazyPlaceLookup
                       value={hometown}
                       onChange={(value) => {
                         console.log('Profile Page - PlaceLookup onChange called with value:', value);

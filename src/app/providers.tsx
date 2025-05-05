@@ -6,7 +6,7 @@ import { AuthProvider } from 'bndy-ui';
 import { ArtistProvider } from '@/lib/context/artist-context';
 import { CalendarProvider } from '@/lib/context/calendar-context';
 import { ThemeProvider } from '@/lib/context/theme-context';
-import { GoogleMapsProvider } from 'bndy-ui';
+// GoogleMapsProvider removed - now using LazyPlaceLookup component instead
 import { ErrorBoundary } from 'bndy-ui';
 import { initializeFirebase } from '@/lib/firebase';
 
@@ -21,30 +21,17 @@ export default function Providers({ children }: ProvidersProps) {
     initializeFirebase();
   }, []);
 
-  // Get Google Maps API key from environment variables
-  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+  // Google Maps API key is now handled by the LazyPlaceLookup component
   
   return (
     <ErrorBoundary fallback={<div>Something went wrong. Please try refreshing the page.</div>}>
       <ThemeProvider>
         <AuthProvider>
-          {mapsApiKey ? (
-            // Only render GoogleMapsProvider when API key is available
-            <GoogleMapsProvider apiKey={mapsApiKey}>
-              <ArtistProvider>
-                <CalendarProvider>
-                  {children}
-                </CalendarProvider>
-              </ArtistProvider>
-            </GoogleMapsProvider>
-          ) : (
-            // Skip the GoogleMapsProvider when no API key is available
-            <ArtistProvider>
-              <CalendarProvider>
-                {children}
-              </CalendarProvider>
-            </ArtistProvider>
-          )}
+          <ArtistProvider>
+            <CalendarProvider>
+              {children}
+            </CalendarProvider>
+          </ArtistProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

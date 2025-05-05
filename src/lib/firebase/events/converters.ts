@@ -1,6 +1,6 @@
 // src/lib/firebase/events/converters.ts
 import { Timestamp, serverTimestamp } from 'firebase/firestore';
-import { BndyCalendarEvent } from '@/types/calendar';
+import { BndyCalendarEvent, USER_CALENDAR_BAND_EVENT_COLOR } from '@/types/calendar';
 import { FirestoreEvent } from './types';
 
 /**
@@ -27,9 +27,9 @@ export const convertToCalendarEvent = (event: FirestoreEvent): BndyCalendarEvent
     sourceId: event.sourceId,
     sourceName: event.sourceName,
     // Do NOT modify the title for member events - it's already formatted in getArtistEvents
-    // Set color for band events
+    // Set color for band events using centralized constant
     ...(event.sourceType === 'band' && {
-      color: '#3b82f6' // blue-500
+      color: USER_CALENDAR_BAND_EVENT_COLOR
     })
   };
 };

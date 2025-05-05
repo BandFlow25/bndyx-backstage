@@ -1,0 +1,43 @@
+/* Dark mode styles for event form */
+.special-event-form.dark-mode {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+
+.special-event-form.dark-mode .special-event-form-header {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+}
+
+.special-event-form.dark-mode .special-event-form-content {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+.special-event-form.dark-mode label {
+  color: #f1f5f9 !important;
+}
+
+.special-event-form.dark-mode input[type="text"],
+.special-event-form.dark-mode textarea,
+.special-event-form.dark-mode select {
+  background-color: #334155 !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+
+.special-event-form.dark-mode input[type="checkbox"] {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+}
+
+.special-event-form.dark-mode button.cancel-button {
+  background-color: #475569 !important;
+  color: #f1f5f9 !important;
+}
+
+.special-event-form.dark-mode button.submit-button {
+  background-color: #f97316 !important;
+  color: white !important;
+}

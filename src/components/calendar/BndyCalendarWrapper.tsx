@@ -1,14 +1,27 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { BndyCalendar } from 'bndy-ui';
-import { BndyCalendarEvent } from 'bndy-types';
+import { ModernCalendar } from 'bndy-ui';
+import { BndyCalendarEvent, USER_CALENDAR_BAND_EVENT_COLOR, getEventColor as getEventColorUtil } from '@/types/calendar';
+import CalendarLegend from './CalendarLegend';
 
 /**
- * A wrapper around BndyCalendar that handles band events properly
+ * A wrapper around ModernCalendar that handles band events properly
  * This component applies proper styling for band events without modifying the event data
  */
-const BndyCalendarWrapper = (props: any) => {
+interface BndyCalendarWrapperProps {
+  events: BndyCalendarEvent[];
+  showBandEvents?: boolean;
+  onSelectEvent?: (event: BndyCalendarEvent) => void;
+  onSelectSlot?: (slotInfo: { date: Date; allDay: boolean }) => void;
+  defaultView?: 'month' | 'agenda';
+  defaultDate?: Date;
+  className?: string;
+  readOnly?: boolean;
+  isDarkMode?: boolean;
+}
+
+const BndyCalendarWrapper = (props: BndyCalendarWrapperProps) => {
   const { events, showBandEvents = true } = props;
   
   // Filter events based on showBandEvents
@@ -26,15 +39,37 @@ const BndyCalendarWrapper = (props: any) => {
       if (event.sourceType === 'band' && !event.color) {
         return {
           ...event,
-          color: '#3b82f6' // blue-500
+          color: USER_CALENDAR_BAND_EVENT_COLOR
         };
       }
       return event;
     });
   }, [filteredEvents]);
   
-  // Pass all props through to BndyCalendar, just replacing the events array
-  return <BndyCalendar {...props} events={processedEvents} />;
+  // Define a custom getEventColor function for this wrapper
+  const getEventColor = (event: BndyCalendarEvent): string => {
+    if (event.sourceType === 'band') {
+      return USER_CALENDAR_BAND_EVENT_COLOR;
+    }
+    return getEventColorUtil(event.eventType, 'user');
+  };
+
+  // Use ModernCalendar instead of the legacy BndyCalendar
+  return <ModernCalendar 
+    events={processedEvents as any} // Type assertion to bypass type mismatch
+    onNavigate={() => {}} // Required prop
+    onViewChange={() => {}} // Required prop
+    defaultView={props.defaultView || 'month'}
+    defaultDate={props.defaultDate || new Date()}
+    className={`bndy-modern-calendar ${props.className || ''}`}
+    readOnly={props.readOnly || false}
+    theme={props.isDarkMode ? 'dark' : 'light'}
+    weekStartsOn={1} // Monday as default
+    getEventColor={getEventColor}
+    renderLegend={() => <CalendarLegend context="user" darkMode={props.isDarkMode} showBandEvents={showBandEvents} />}
+    onSelectEvent={props.onSelectEvent}
+    onSelectSlot={props.onSelectSlot}
+  />;
 };
 
 export default BndyCalendarWrapper;

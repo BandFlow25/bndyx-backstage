@@ -11,7 +11,8 @@ import { CreateArtistData, MusicGenre, getAvailableMusicGenres, UserProfile } fr
 import { validateSocialMediaUrl } from '@/lib/utils/social-media-utils';
 import { MapPin, InfoIcon, Check, X } from 'lucide-react';
 import Link from 'next/link';
-import { PlaceLookup, BndyLoadingScreen } from 'bndy-ui';
+import { BndyLoadingScreen } from 'bndy-ui';
+import { LazyPlaceLookup } from '@/components/ui/LazyPlaceLookup';
 // Now importing from main entry point since types are properly exported
 import type { SocialMediaLink } from 'bndy-ui';
 
@@ -270,7 +271,7 @@ const CreateArtistPage = () => {
                   <MapPin className="mr-2 h-5 w-5 text-indigo-500" />
                   Hometown
                 </label>
-                <PlaceLookup
+                <LazyPlaceLookup
                   value={hometown}
                   onChange={setHometown}
                   placeholder="Enter hometown"

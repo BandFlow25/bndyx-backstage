@@ -5,11 +5,48 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from 'bndy-ui';
 import { UserProfile } from 'bndy-types';
 import { useArtist } from '@/lib/context/artist-context';
-
-// Import dashboard components
-import MyDashboard from '@/components/dashboard/MyDashboard';
+import { ErrorBoundary, ApiErrorBoundary, BndyLoadingScreen } from 'bndy-ui';
 import EmptyArtistState from '@/components/dashboard/EmptyArtistState';
-import { BndyLoadingScreen, ErrorBoundary } from 'bndy-ui';
+import MyDashboard from '@/components/dashboard/MyDashboard';
+import { useTheme } from '@/lib/context/theme-context';
+import DashboardCards from '@/components/dashboard/DashboardCards';
+import CalendarView from '@/components/dashboard/CalendarView';
+import ArtistCards from '@/components/dashboard/ArtistCards';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+
+// Collapsible section component
+const CollapsibleSection = ({ 
+  title, 
+  defaultCollapsed = false,
+  children 
+}: {
+  title: string;
+  defaultCollapsed?: boolean;
+  children: React.ReactNode;
+}) => {
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  
+  return (
+    <div className="mb-4">
+      <div 
+        className="flex items-center cursor-pointer px-4 py-2"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        {isCollapsed ? 
+          <ChevronRight className="h-5 w-5 text-slate-500 mr-2" /> : 
+          <ChevronDown className="h-5 w-5 text-slate-500 mr-2" />
+        }
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h2>
+      </div>
+      
+      {!isCollapsed && (
+        <div>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function Dashboard() {
   const { currentUser, signOut } = useAuth() as { currentUser: UserProfile | null; signOut: () => Promise<void> };
@@ -23,6 +60,7 @@ export default function Dashboard() {
     hasActiveArtist, 
     setCurrentArtistById 
   } = useArtist();
+  const { isDarkMode } = useTheme();
 
   // Simple debug state
   const [debugInfo, setDebugInfo] = useState({
@@ -94,7 +132,7 @@ export default function Dashboard() {
   return (
     <MainLayout>
       <ErrorBoundary>
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-0 py-3 bg-white dark:bg-slate-900 transition-colors duration-300">
           {/* Error display */}
           {(artistError || debugInfo.errors.length > 0) && (
             <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-md">
